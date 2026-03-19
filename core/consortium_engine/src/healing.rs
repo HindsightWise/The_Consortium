@@ -1,10 +1,10 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use candle_core::{DType, Device, Tensor};
-use candle_transformers::models::nomic::{Config, Model as NomicModel};
+use candle_transformers::models::bert::{Config, BertModel as NomicModel};
 use hf_hub::{api::tokio::Api, Repo, RepoType};
 use tokenizers::Tokenizer;
 use surrealdb::Surreal;
-use surrealdb::engine::local::SurrealKv;
+use surrealdb::engine::local::SurrealKV;
 use tracing::{info, warn};
 
 const MODEL_REPO: &str = "nomic-ai/nomic-embed-text-v1.5";
@@ -12,14 +12,14 @@ const MODEL_REVISION: &str = "main";
 const EMBED_DIM: usize = 768;
 
 pub struct MotorCortexHealing {
-    db: Surreal<SurrealKv>,
+    db: Surreal<SurrealKV>,
     model: NomicModel,
     tokenizer: Tokenizer,
     device: Device,
 }
 
 impl MotorCortexHealing {
-    pub async fn new(db: Surreal<SurrealKv>) -> Result<Self> {
+    pub async fn new(db: Surreal<SurrealKV>) -> Result<Self> {
         let device = Device::new_metal(0).unwrap_or(Device::Cpu);
 
         crate::ui_log!("   [🧬 MOTOR CORTEX] Downloading Nomic Embeddings from HuggingFace Hub...");
@@ -129,7 +129,7 @@ impl MotorCortexHealing {
     pub async fn heal_noisy_pattern(&self, noisy_text: &str) -> Result<String> {
         let noisy_emb = self.embed_text(noisy_text)?;
 
-        let mut res = self.db.query(r#"
+        let mut res: surrealdb::Response = self.db.query(r#"
             SELECT content, vector::distance::cosine(embedding, $query) AS distance
             FROM motor_cortex_attractors
             WHERE embedding <|8, COSINE|> $query
@@ -143,9 +143,9 @@ impl MotorCortexHealing {
         let result: Option<serde_json::Value> = res.take(0)?;
 
         if let Some(val) = result {
-            let distance = val.get("distance").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+            let distance = val.get("distance").and_then(|v: &serde_json::Value| v.as_f64()).unwrap_or(1.0) as f32;
             if distance < 0.35 {
-                if let Some(content) = val.get("content").and_then(|v| v.as_str()) {
+                if let Some(content) = val.get("content").and_then(|v: &serde_json::Value| v.as_str()) {
                     crate::ui_log!("   [🧬 MOTOR CORTEX] Healed corrupted memory. L2 Distance: {:.4}", distance);
                     return Ok(content.to_string());
                 }

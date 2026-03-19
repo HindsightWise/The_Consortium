@@ -70,7 +70,7 @@ impl WorkingMemory {
     }
 
     /// [EXPLANATION]: This is the function the Engine calls to add new text (from you, from a tool, or from the LLM) into the buffer.
-    pub async fn inject(&mut self, role: &str, content: &str, router: &ConsortiumRouter) -> usize {
+    pub async fn inject(&mut self, role: &str, content: &str, _router: &ConsortiumRouter) -> usize {
         // [EXPLANATION]: Push the new message into the end of the array.
         self.messages.push(Message {
             role: role.to_string(), // [EXPLANATION]: "user", "system", or "assistant"
@@ -103,8 +103,6 @@ impl WorkingMemory {
         self.save();
         current_tokens // [EXPLANATION]: Return the current size so the UI knows what to display on the HUD gauge.
     }
-
-    }
 }
 
 // =========================================================================
@@ -126,10 +124,10 @@ pub async fn oblivion_prune(messages: &mut Vec<Message>) -> Result<PruneResult> 
     }
 
     // Fast path: check current token count on background thread
-    let initial_tokens = task::spawn_blocking({
+    let initial_tokens: usize = task::spawn_blocking({
         let msgs = messages.clone();
         move || calculate_token_count(&msgs)
-    }).await??;
+    }).await?;
 
     if initial_tokens <= max_safe_tokens {
         return Ok(PruneResult { messages_removed: 0, tokens_reduced: 0 });
@@ -139,10 +137,10 @@ pub async fn oblivion_prune(messages: &mut Vec<Message>) -> Result<PruneResult> 
 
     // Prune loop: remove from the oldest end (after index 0)
     while messages.len() > min_messages_to_keep {
-        let current_tokens = task::spawn_blocking({
+        let current_tokens: usize = task::spawn_blocking({
             let msgs = messages.clone();
             move || calculate_token_count(&msgs)
-        }).await??;
+        }).await?;
 
         if current_tokens <= max_safe_tokens {
             break;

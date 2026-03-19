@@ -584,9 +584,10 @@ async fn main() -> anyhow::Result<()> {
 
     let (tx_user, rx_user) = tokio::sync::mpsc::unbounded_channel::<String>();
 
+    let engine_shutdown_tx = shutdown_tx.clone();
     // Spawn the Headless Engine Loop
     tokio::spawn(async move {
-        if let Err(e) = engine_main(rx_user).await {
+        if let Err(e) = engine_main(rx_user, engine_shutdown_tx).await {
             crate::ui_log!("Engine Error: {}", e);
         }
     });
@@ -636,6 +637,7 @@ fn get_active_skills_count() -> usize {
 /// 4. Either executes an Urge, or generates an autonomous `dream_prompt` to push the Prime Directive forward.
 async fn engine_main(
     mut rx_user: tokio::sync::mpsc::UnboundedReceiver<String>,
+    shutdown_tx: tokio::sync::broadcast::Sender<()>,
 ) -> anyhow::Result<()> {
     let start_time = Instant::now();
     dotenvy::dotenv().ok();
