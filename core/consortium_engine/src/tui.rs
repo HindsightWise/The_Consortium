@@ -57,6 +57,7 @@ impl TuiApp {
         execute!(stdout, EnterAlternateScreen)?;
         let backend = CrosstermBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
+        terminal.clear()?;
 
         loop {
             // Drain the rust channel for telemetry
