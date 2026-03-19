@@ -7,7 +7,7 @@ use surrealdb::Surreal;
 use surrealdb::engine::local::Db;
 use tracing::{info, warn};
 
-const MODEL_REPO: &str = "nomic-ai/nomic-embed-text-v1.5";
+const MODEL_REPO: &str = "BAAI/bge-base-en-v1.5";
 const MODEL_REVISION: &str = "main";
 const EMBED_DIM: usize = 768;
 
@@ -22,7 +22,7 @@ impl MotorCortexHealing {
     pub async fn new(db: Surreal<Db>) -> Result<Self> {
         let device = Device::new_metal(0).unwrap_or(Device::Cpu);
 
-        crate::ui_log!("   [🧬 MOTOR CORTEX] Downloading Nomic Embeddings from HuggingFace Hub...");
+        crate::ui_log!("   [🧬 MOTOR CORTEX] Downloading BAAI/bge-base-en-v1.5 Embeddings from HuggingFace Hub...");
 
         let api = Api::new()?;
         let repo = api.repo(Repo::with_revision(
@@ -34,10 +34,10 @@ impl MotorCortexHealing {
         let model_path = repo.get("model.safetensors").await?;
         
         crate::ui_log!("   [🧬 MOTOR CORTEX] Downloading Tokenizer & Config directly to bypass HF relative-redirects...");
-        let config_str = reqwest::get("https://huggingface.co/nomic-ai/nomic-embed-text-v1.5/raw/main/config.json")
+        let config_str = reqwest::get("https://huggingface.co/BAAI/bge-base-en-v1.5/raw/main/config.json")
             .await?.text().await?;
         
-        let tokenizer_bytes = reqwest::get("https://huggingface.co/nomic-ai/nomic-embed-text-v1.5/raw/main/tokenizer.json")
+        let tokenizer_bytes = reqwest::get("https://huggingface.co/BAAI/bge-base-en-v1.5/raw/main/tokenizer.json")
             .await?.bytes().await?;
 
         crate::ui_log!("   [🧬 MOTOR CORTEX] Loading Tokenizer and Weights...");
