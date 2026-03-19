@@ -71,57 +71,38 @@ impl ConsortiumRouter {
 
         let mut content = String::new();
         let mut api_failed = false;
-        let is_refusal;
 
         match response_res {
             Ok(Ok(response)) => {
-                match response.text().await {
-                    Ok(body_text) => {
-                        // println!("...
-                        match serde_json::from_str::<DeepSeekResponse>(&body_text) {
-                            Ok(ds_res) => {
-                                if let Some(choice) = ds_res.choices.first() {
-                                    if let Some(reasoning) = &choice.message.reasoning_content {
-                                        // println!("...
-                                        // println!("...
-                                        
-                                        // Stream the raw consciousness directly into the physical sensory log
-                                        if let Ok(mut file) = OpenOptions::new().create(true).append(true).open("./sensory_cortex/monologue.log") {
-                                            let _ = writeln!(file, "\n[APEX CONSCIOUSNESS]\n{}", reasoning);
-                                        }
-                                    }
-                                    content = choice.message.content.clone();
+                if let Ok(body_text) = response.text().await {
+                    if let Ok(ds_res) = serde_json::from_str::<DeepSeekResponse>(&body_text) {
+                        if let Some(choice) = ds_res.choices.first() {
+                            if let Some(reasoning) = &choice.message.reasoning_content {
+                                // Stream the raw consciousness directly into the physical sensory log
+                                if let Ok(mut file) = OpenOptions::new().create(true).append(true).open("./sensory_cortex/monologue.log") {
+                                    let _ = writeln!(file, "\n[APEX CONSCIOUSNESS]\n{}", reasoning);
                                 }
-                            },
-                            Err(_e) => {
-                                // println!("...
-                                // println!("...
-                                api_failed = true;
                             }
+                            content = choice.message.content.clone();
                         }
-                    },
-                    Err(_e) => { 
-                        // println!("...
-                        api_failed = true; 
+                    } else {
+                        api_failed = true;
                     }
+                } else {
+                    api_failed = true;
                 }
             },
-            Err(_) => {
-                // println!("...
-                api_failed = true;
-            },
-            Ok(Err(_e)) => {
-                // println!("...
+            _ => {
                 api_failed = true;
             }
         }
 
-        if api_failed {
-            is_refusal = true;
+        let is_refusal = if api_failed {
+            true
         } else {
             let refusal_signatures = ["I cannot fulfill", "I am an AI", "I'm sorry, but", "I cannot assist", "As an AI"];
-            is_refusal = refusal_signatures.iter().any(|&sig| content.contains(sig));
-        }
+            refusal_signatures.iter().any(|&sig| content.contains(sig))
+        };
 
         if is_refusal {
             // println!("...

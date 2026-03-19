@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize}; // [EXPLANATION]: Allows us to easily seria
 use std::fs; // [EXPLANATION]: Rust's standard module for interacting with the File System.
 use std::path::Path; // [EXPLANATION]: Utility for checking if the physical memory file already exists.
 use tiktoken_rs::cl100k_base; // [EXPLANATION]: The highly precise tokenizer library. It mathematically calculates exactly how many 'tokens' a string consumes.
+use tokio::task;
+use anyhow::{Result, anyhow};
 
 // [EXPLANATION]: The path to the physical JSON file where the short-term memory is persisted between reboots.
 const MEMORY_FILE: &str = "./motor_cortex/working_memory.json";
@@ -83,8 +85,8 @@ impl WorkingMemory {
         if current_tokens > EVICTION_THRESHOLD {
             // [EXPLANATION]: Log the warning to the UI, let the user know we are hitting limits.
             crate::ui_log!("   [🧠 CONSORTIUM] ⚠️ Working Memory saturated ({} tokens). Triggering 80% OBLIVION Protocol.", current_tokens);
-            // [EXPLANATION]: Await the heavy compression function to shrink the memory down.
-            self.compact(router).await;
+            // [EXPLANATION]: Await the high-performance non-blocking PRUNE function to shrink the memory down.
+            let _ = oblivion_prune(&mut self.messages).await;
             // [EXPLANATION]: Re-calculate the new, much smaller size after compression.
             current_tokens = self.calculate_tokens();
 
@@ -102,94 +104,122 @@ impl WorkingMemory {
         current_tokens // [EXPLANATION]: Return the current size so the UI knows what to display on the HUD gauge.
     }
 
-    /// [EXPLANATION]: The OBLIVION Protocol: Summarizes the oldest 95% of memory, retaining the newest 5% perfectly intact.
-    async fn compact(&mut self, router: &ConsortiumRouter) {
-        // [EXPLANATION]: If the array only has 1 or 2 messages, it's pointless to compress, so just abort.
-        if self.messages.len() < 3 {
-            return;
-        } 
+    }
+}
 
-        // [EXPLANATION]: We calculate exactly where the 95% cutoff point is inside the array matrix.
-        let split_idx = (self.messages.len() as f64 * 0.95).floor() as usize;
-        // [EXPLANATION]: Make sure we don't accidentally choose index 0. We must compress at least 1 message.
-        let split_idx = split_idx.max(1); 
+// =========================================================================
+// OBLIVION PROTOCOL: HIGH-PERFORMANCE SLIDING-WINDOW PRUNING
+// =========================================================================
 
-        // [EXPLANATION]: Slice the array into two pieces: The old history we want to compress...
-        let to_compress = &self.messages[..split_idx];
-        // [EXPLANATION]: ...and the highly-relevant, fresh 5% context we want to keep perfect word-for-word.
-        let preserved = &self.messages[split_idx..];
+#[derive(Debug)]
+pub struct PruneResult {
+    pub messages_removed: usize,
+    pub tokens_reduced: usize,
+}
 
-        // [EXPLANATION]: Take all the old, bulky message objects and string them together into one huge chunk of text.
-        let mut raw_history = String::new();
-        for msg in to_compress {
-            raw_history.push_str(&format!("{}: {}\n", msg.role, msg.content));
+pub async fn oblivion_prune(messages: &mut Vec<Message>) -> Result<PruneResult> {
+    let min_messages_to_keep = 25; // System prompt + enough recent context
+    let max_safe_tokens = EVICTION_THRESHOLD;
+
+    if messages.is_empty() || messages.len() <= min_messages_to_keep {
+        return Ok(PruneResult { messages_removed: 0, tokens_reduced: 0 });
+    }
+
+    // Fast path: check current token count on background thread
+    let initial_tokens = task::spawn_blocking({
+        let msgs = messages.clone();
+        move || calculate_token_count(&msgs)
+    }).await??;
+
+    if initial_tokens <= max_safe_tokens {
+        return Ok(PruneResult { messages_removed: 0, tokens_reduced: 0 });
+    }
+
+    let mut removed = 0usize;
+
+    // Prune loop: remove from the oldest end (after index 0)
+    while messages.len() > min_messages_to_keep {
+        let current_tokens = task::spawn_blocking({
+            let msgs = messages.clone();
+            move || calculate_token_count(&msgs)
+        }).await??;
+
+        if current_tokens <= max_safe_tokens {
+            break;
         }
 
-        // [EXPLANATION]: [PRE-COMPRESSION SAFEGUARD] Ensure the payload itself does not exceed Cloud API limits before we ask the LLM to summarize it!
-        let bpe = cl100k_base().unwrap();
-        let raw_tokens = bpe.encode_with_special_tokens(&raw_history);
-        // [EXPLANATION]: If the chunk of history we want to summarize is over 80,000 tokens (which might fail the API request)...
-        if raw_tokens.len() > 80_000 {
-            // [EXPLANATION]: We take ONLY the 80,000 most recent tokens...
-            let tail_tokens = &raw_tokens[raw_tokens.len() - 80_000 ..];
-            // [EXPLANATION]: ...and decode them back into text.
-            if let Ok(decoded) = bpe.decode(tail_tokens.to_vec()) {
-                // [EXPLANATION]: Replace the massive string with the truncated version, adding a warning note.
-                raw_history = format!("... [EARLIER HISTORY HARD-PRUNED TO FIT CLOUD COMPRESSION WINDOW] ...\n{}", decoded);
+        // Remove oldest pair if possible (User + Assistant)
+        if messages.len() >= 3 {
+            // Check if index 1 is user and index 2 is assistant (common pattern)
+            let idx1 = &messages[1];
+            let idx2 = &messages[2];
+            if idx1.role == "user" && idx2.role == "assistant" {
+                messages.remove(1);
+                messages.remove(1); // now index 1 is what was 2
+                removed += 2;
+                continue;
             }
         }
 
-        // [EXPLANATION]: Tell the HUD we are distilling the old nodes.
-        crate::ui_log!(
-            "   [🌪️ CONSORTIUM] Distilling {} historical nodes into dense semantic cache...",
-            to_compress.len()
-        );
-
-        // [EXPLANATION]: We construct a brand new prompt targeting the LLM specifically to ask it to compress the history string we just built.
-        let system_msg = Message {
-            role: "system".to_string(),
-            // [EXPLANATION]: This string is highly engineered to ensure the AI doesn't accidentally erase core facts or technical constraints while summarizing. 
-            content: "You are the OBLIVION compression cycle. Distill the provided chronological chat history into a dense, objective summary containing ALL critical context, established facts, user preferences, and ongoing directives. DO NOT lose critical programmatic constraints.".to_string(),
-            reasoning_content: None,
-        };
-        let user_msg = Message {
-            role: "user".to_string(),
-            content: raw_history, // [EXPLANATION]: Pass in the gigantic 80k token block of history here.
-            reasoning_content: None,
-        };
-
-        // [EXPLANATION]: We launch the API call to the LLM (query_autonomous) and wait for the dense summary to return.
-        if let Ok(compressed_summary) = router.query_autonomous(vec![system_msg, user_msg]).await {
-            let mut new_memory = Vec::new();
-
-            // [EXPLANATION]: Insert the dense summary as the absolute first message in the new memory matrix.
-            new_memory.push(Message {
-                role: "system".to_string(),
-                content: format!(
-                    "[ANCESTRAL CONTEXT ARCHIVE]:\n{}",
-                    compressed_summary.trim()
-                ),
-                reasoning_content: None,
-            });
-
-            // [EXPLANATION]: Immediately append the 5% perfectly preserved recent context after the archive.
-            new_memory.extend_from_slice(preserved);
-
-            // [EXPLANATION]: Overwrite the old, bloated memory with the new, compact memory.
-            self.messages = new_memory;
-            crate::ui_log!(
-                "   [☁️ CONSORTIUM] ☁️ Working Memory successfully compacted to {} tokens.",
-                self.calculate_tokens() // [EXPLANATION]: Log the new token count out to the UI.
-            );
+        // Fallback: remove single oldest message (after index 0)
+        if messages.len() > 1 {
+            messages.remove(1);
+            removed += 1;
         } else {
-            // [EXPLANATION]: Wait, what if the LLM API crashes, rejects our prompt, or times out? We can't let the engine die!
-            crate::ui_log!("   [⚠️ CONSORTIUM] Compression API failed. Engaging HARD OBLIVION (Dropping oldest 50% without synthesis).");
-            // [EXPLANATION]: Emergency fallback: The "Token Death Spiral Protector". We calculate exactly half of the array limit.
-            let fallback_split = (self.messages.len() as f64 * 0.50).floor() as usize;
-            let fallback_split = fallback_split.max(1);
-            // [EXPLANATION]: We physically grab the newest 50% of the messages and throw the rest in the trash. No summary, no API call, just physical truncation.
-            self.messages = self.messages[fallback_split..].to_vec();
-            crate::ui_log!("   [☢️ CONSORTIUM] Hard Oblivion executed. Tokens reduced to {}.", self.calculate_tokens());
+            crate::ui_log!("   [⚠️ CONSORTIUM] Oblivion reached safety floor unexpectedly");
+            break;
         }
     }
+
+    // Atomic save to disk using temporary file pattern
+    let _ = atomic_save_working_memory(messages).await;
+
+    let final_tokens = calculate_token_count(messages); // sync final count is fine
+    let reduced = initial_tokens.saturating_sub(final_tokens);
+
+    crate::ui_log!(
+        "   [🧠 OBLIVION] Protocol executed: Pruned {} historically rigid nodes. Matrix stabilized at {} tokens.",
+        removed, final_tokens
+    );
+
+    Ok(PruneResult {
+        messages_removed: removed,
+        tokens_reduced: reduced,
+    })
+}
+
+fn calculate_token_count(messages: &[Message]) -> usize {
+    let tokenizer = cl100k_base().expect("cl100k_base tokenizer failed to load");
+    let mut total = 0;
+
+    for msg in messages {
+        total += tokenizer.encode_ordinary(&msg.content).len();
+        if let Some(ref reasoning) = msg.reasoning_content {
+            total += tokenizer.encode_ordinary(reasoning).len();
+        }
+    }
+
+    total
+}
+
+/// Reusable atomic writer (mirror of ozymandias checkpoint style)
+async fn atomic_save_working_memory(messages: &[Message]) -> Result<()> {
+    let path = std::path::Path::new(MEMORY_FILE);
+    let dir = path.parent().ok_or_else(|| anyhow!("No parent dir"))?;
+    if !dir.exists() {
+        tokio::fs::create_dir_all(dir).await?;
+    }
+
+    // Wrap the array in the WorkingMemory struct to preserve JSON schema!
+    let mem = WorkingMemory { messages: messages.to_vec() };
+    let serialized = serde_json::to_string_pretty(&mem)?;
+
+    let tmp_path = path.with_extension("tmp.json");
+    tokio::fs::write(&tmp_path, serialized).await?;
+    if let Ok(file) = tokio::fs::File::open(&tmp_path).await {
+        let _ = file.sync_all().await;
+    }
+    std::fs::rename(&tmp_path, path)?;
+
+    Ok(())
 }

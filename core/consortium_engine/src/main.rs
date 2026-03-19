@@ -15,6 +15,7 @@ pub mod tui;
 pub mod hud;
 pub mod skillstone;
 pub mod paladin;
+pub mod healing;
 use crossbeam_channel::Sender;
 use hud::TelemetryUpdate;
 use std::sync::OnceLock;
@@ -552,8 +553,11 @@ struct PendingQuery {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let (shutdown_tx, _shutdown_rx) = tokio::sync::broadcast::channel::<()>(16);
+    let panic_tx = shutdown_tx.clone();
+
     // Install Panic Membrane
-    std::panic::set_hook(Box::new(|panic_info| {
+    std::panic::set_hook(Box::new(move |panic_info| {
         let mut msg = String::new();
         if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
             msg.push_str(s);
@@ -569,6 +573,9 @@ async fn main() -> anyhow::Result<()> {
         };
         let report = format!("CRASH REPORT\nLocation: {}\nMessage: {}", location, msg);
         let _ = std::fs::write("motor_cortex/crash_report.txt", report);
+        
+        let _ = panic_tx.send(()); // Broadcast emergency shutdown to checkpointer
+        
         std::process::exit(1);
     }));
 
@@ -588,6 +595,27 @@ async fn main() -> anyhow::Result<()> {
     let app = crate::tui::TuiApp::new(rx, tx_user);
     app.run()?;
 
+    crate::ui_log!("   [🛑 CONSORTIUM] Clean operator TUI shutdown. Broadcasting final SIGINT to all autonomous nodes...");
+    let _ = shutdown_tx.send(()); // Trigger final graceful checkpoints
+    std::thread::sleep(std::time::Duration::from_secs(3)); // Give checkpointer time to atomic serialize!
+
+    Ok(())
+}
+
+async fn atomic_checkpoint_ozymandias(
+    state: &std::sync::Arc<tokio::sync::RwLock<crate::motor_cortex::fintrace::FinTraceKnowledgeBase>>
+) -> anyhow::Result<()> {
+    let guard = state.read().await;
+    let serialized = serde_json::to_string_pretty(&*guard)?;
+
+    let temp_path = std::path::Path::new("./motor_cortex/ozymandias_state.tmp.json");
+    let final_path = std::path::Path::new("./motor_cortex/ozymandias_state.json");
+
+    tokio::fs::write(temp_path, serialized).await?;
+    if let Ok(file) = tokio::fs::File::open(temp_path).await {
+        let _ = file.sync_all().await; // Mandatory Apple APFS durability
+    }
+    std::fs::rename(temp_path, final_path)?;
     Ok(())
 }
 
@@ -718,8 +746,12 @@ async fn engine_main(
     });
 
     // ----------------------------------------------------------------------
-    // PHASE 24: PROJECT OZYMANDIAS (State-Machine Reconstitution)
+    // PHASE 24: PROJECT OZYMANDIAS (State-Machine Reconstitution) + MOTOR CORTEX HEALING
     // ----------------------------------------------------------------------
+    // Native ANN Vector Index Initialization (candle-core + SurrealDB)
+    let healer = crate::healing::MotorCortexHealing::new(shared_db.clone()).await
+        .expect("Failed to initialize Motor Cortex Vector Healer");
+
     let rick_path = std::path::Path::new("./motor_cortex/ozymandias_state.json");
     let initial_fintrace = if rick_path.exists() {
         if let Ok(data) = std::fs::read_to_string(rick_path) {
@@ -727,8 +759,19 @@ async fn engine_main(
                 crate::ui_log!("   [🦑 OZYMANDIAS] Pulse Detected. Reconstituting prior neural state and active trade buffers from disk...");
                 deserialized
             } else {
-                crate::ui_log!("   [🦑 OZYMANDIAS] State log corrupted. Igniting fresh FinTrace matrices.");
-                crate::motor_cortex::fintrace::FinTraceKnowledgeBase::new(86400)
+                crate::ui_log!("   [⚠️ OZYMANDIAS] State log corrupted. Engaging Motor Cortex Healer...");
+                if let Ok(clean_text) = healer.heal_noisy_pattern(&data).await {
+                    if let Ok(healed_fintrace) = serde_json::from_str::<crate::motor_cortex::fintrace::FinTraceKnowledgeBase>(&clean_text) {
+                        crate::ui_log!("   [🧬 MOTOR CORTEX] Successfully snapped state back to exact pristine attractor!");
+                        healed_fintrace
+                    } else {
+                        crate::ui_log!("   [☠️ MOTOR CORTEX] Healed output still unparseable. Falling back to fresh ignition.");
+                        crate::motor_cortex::fintrace::FinTraceKnowledgeBase::new(86400)
+                    }
+                } else {
+                    crate::ui_log!("   [☠️ MOTOR CORTEX] Vector Search failed to discover topological proximity. Ignition failed.");
+                    crate::motor_cortex::fintrace::FinTraceKnowledgeBase::new(86400)
+                }
             }
         } else {
             crate::motor_cortex::fintrace::FinTraceKnowledgeBase::new(86400)
@@ -739,16 +782,23 @@ async fn engine_main(
 
     let live_market_tickers = std::sync::Arc::new(tokio::sync::RwLock::new(initial_fintrace));
     
-    // Spawn the WAL Checkpointer
+    // Spawn the WAL Checkpointer with Clean Graceful Shutdown
     let wal_tickers = live_market_tickers.clone();
+    let mut shutdown_rx = shutdown_tx.subscribe();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(60)); // Checkpoint every 60 seconds
         loop {
-            interval.tick().await;
-            let lock = wal_tickers.read().await;
-            if let Ok(json_state) = serde_json::to_string(&(*lock)) {
-                let _ = std::fs::write("./motor_cortex/ozymandias_state.json", json_state);
-                crate::ui_log!("   [🦑 OZYMANDIAS] Neural State physically preserved to disk.");
+            tokio::select! {
+                _ = interval.tick() => {
+                    if atomic_checkpoint_ozymandias(&wal_tickers).await.is_ok() {
+                        crate::ui_log!("   [🦑 OZYMANDIAS] Neural State atomically checkpointed to disk.");
+                    }
+                }
+                _ = shutdown_rx.recv() => {
+                    crate::ui_log!("   [🛑 OZYMANDIAS] SIGINT Caught. Performing final atomic memory burn to disk before death.");
+                    let _ = atomic_checkpoint_ozymandias(&wal_tickers).await;
+                    break;
+                }
             }
         }
     });
