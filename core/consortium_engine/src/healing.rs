@@ -74,7 +74,6 @@ impl MotorCortexHealing {
             DEFINE FIELD file ON motor_cortex_attractors TYPE string;
             DEFINE FIELD content ON motor_cortex_attractors TYPE string;
             DEFINE FIELD embedding ON motor_cortex_attractors TYPE array<float>;
-            DEFINE INDEX idx_embedding ON motor_cortex_attractors COLUMNS embedding SEARCH MTREE DIMENSION 768 DIST COSINE;
         ").await?;
 
         if let Ok(entries) = std::fs::read_dir("./.agents/skills") {
@@ -137,7 +136,6 @@ impl MotorCortexHealing {
         let mut res: surrealdb::Response = self.db.query(r#"
             SELECT content, vector::distance::cosine(embedding, $query) AS distance
             FROM motor_cortex_attractors
-            WHERE embedding <|8, COSINE|> $query
             ORDER BY distance ASC
             LIMIT 1
         "#)
