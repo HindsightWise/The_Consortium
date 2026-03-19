@@ -158,4 +158,20 @@ impl MotorCortexHealing {
         crate::ui_log!("   [⚠️ MOTOR CORTEX] No close attractor found (dist > 0.35). Keeping raw crash log.");
         Ok(noisy_text.to_string())
     }
+
+    /// Surgically writes pruned contextual memories (from Oblivion Protocol) into permanent long-term graphical storage
+    pub async fn archive_pruned_memory(&self, role: &str, content: &str, embedding: Vec<f32>) -> Result<()> {
+        let _ = self.db.query(r#"
+            CREATE archived_memories SET
+                role = $role,
+                content = $content,
+                embedding = $embedding,
+                archived_at = time::now()
+        "#)
+        .bind(("role", role))
+        .bind(("content", content))
+        .bind(("embedding", embedding))
+        .await?;
+        Ok(())
+    }
 }

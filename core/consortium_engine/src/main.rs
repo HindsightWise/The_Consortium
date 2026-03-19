@@ -165,6 +165,7 @@ async fn execute_consortium_cognition(
     wunder_client: &mut Option<mcp_client::McpClient>,
     envoy_client: &mut Option<mcp_client::McpClient>,
     pinchtab_client: &mut Option<mcp_client::McpClient>,
+    healer: &crate::healing::MotorCortexHealing,
 ) -> ConsortiumAction {
     crate::ui_log!("   [🔮 CONSORTIUM] ⚙️ Compiling Mathematical Constraints...");
     
@@ -1039,7 +1040,7 @@ async fn engine_main(
                                 CRITICAL: You MUST verify the exact number of items on the list before arranging them, and make sure there are the EXACT SAME number of items after the sort, plus any new ones you added.n
                                 Alternatively, generate an `internal_monologue` pushing these objectives forward.", current_tasks);
 
-                            let action = execute_consortium_cognition(&dream_prompt, &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client).await;
+                            let action = execute_consortium_cognition(&dream_prompt, &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client, &healer).await;
                             if let ConsortiumAction::QueryUser = action {
                                 pending_query = Some(PendingQuery { start: Instant::now(), _contemplated: false });
                             }
@@ -1072,7 +1073,7 @@ async fn engine_main(
                     let wait_time = query.start.elapsed();
                     if wait_time >= Duration::from_secs(4 * 3600) {
                         crate::ui_log!("n   [⚡ CONSORTIUM] ⚠️ CRITICAL: 4 Hours elapsed. SOVEREIGN OVERRIDE.");
-                        let _ = execute_consortium_cognition("USER TIMEOUT REACHED.", &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client).await;
+                        let _ = execute_consortium_cognition("USER TIMEOUT REACHED.", &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client, &healer).await;
                         pending_query = None;
                     }
                 }
@@ -1124,7 +1125,7 @@ async fn engine_main(
                         last_interaction = Instant::now();
                         pending_query = None;
 
-                        let action = execute_consortium_cognition(&prompt, &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client).await;
+                        let action = execute_consortium_cognition(&prompt, &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client, &healer).await;
                         if let ConsortiumAction::QueryUser = action {
                             pending_query = Some(PendingQuery { start: Instant::now(), _contemplated: false });
                         }
@@ -1211,7 +1212,7 @@ async fn engine_main(
                                                 // Phase 13: Glossopetrae Coherence Sieve (Filter and inject before executing)
                                                 soul.ingest_glossopetrae(&sanitized_content, &router).await;
 
-                                                let action = execute_consortium_cognition(&sanitized_content, &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client).await;
+                                                let action = execute_consortium_cognition(&sanitized_content, &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client, &healer).await;
 
                                                 if let ConsortiumAction::QueryUser = action {
                                                     pending_query = Some(PendingQuery { start: Instant::now(), _contemplated: false });
@@ -1244,7 +1245,7 @@ async fn engine_main(
 
                 let prompt = format!("USER DIRECTIVE RECEIVED:\n{}", sanitized_user_msg);
 
-                let action = execute_consortium_cognition(&prompt, &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client).await;
+                let action = execute_consortium_cognition(&prompt, &router, &mut working_memory, live_market_tickers.clone(), &mut aegis_prime_mcp_client, &mut siren_diplomat_mcp_client, &mut mako_strike_mcp_client, &mut vulgaris_execute_mcp_client, &mut chromato_charm_mcp_client, &mut benthic_grind_mcp_client, &mut marginatus_shell_mcp_client, &mut wunder_wildcard_mcp_client, &mut envoy_outward_mcp_client, &mut pinchtab_limb_mcp_client, &healer).await;
                 if let ConsortiumAction::QueryUser = action {
                     pending_query = Some(PendingQuery { start: Instant::now(), _contemplated: false });
                 }
