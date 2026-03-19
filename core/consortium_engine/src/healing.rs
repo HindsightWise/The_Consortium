@@ -32,15 +32,19 @@ impl MotorCortexHealing {
         ));
 
         let model_path = repo.get("model.safetensors").await?;
-        let config_path = repo.get("config.json").await?;
-        let tokenizer_path = repo.get("tokenizer.json").await?;
+        
+        crate::ui_log!("   [🧬 MOTOR CORTEX] Downloading Tokenizer & Config directly to bypass HF relative-redirects...");
+        let config_str = reqwest::get("https://huggingface.co/nomic-ai/nomic-embed-text-v1.5/raw/main/config.json")
+            .await?.text().await?;
+        
+        let tokenizer_bytes = reqwest::get("https://huggingface.co/nomic-ai/nomic-embed-text-v1.5/raw/main/tokenizer.json")
+            .await?.bytes().await?;
 
         crate::ui_log!("   [🧬 MOTOR CORTEX] Loading Tokenizer and Weights...");
 
-        let tokenizer = Tokenizer::from_file(tokenizer_path)
+        let tokenizer = Tokenizer::from_bytes(&tokenizer_bytes)
             .map_err(|e| anyhow::anyhow!("Tokenizer load failed: {}", e))?;
 
-        let config_str = std::fs::read_to_string(config_path)?;
         let config: Config = serde_json::from_str(&config_str)?;
         let vb = unsafe {
             candle_nn::VarBuilder::from_mmaped_safetensors(
