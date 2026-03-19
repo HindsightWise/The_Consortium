@@ -74,7 +74,7 @@ impl MotorCortexHealing {
             DEFINE FIELD file ON motor_cortex_attractors TYPE string;
             DEFINE FIELD content ON motor_cortex_attractors TYPE string;
             DEFINE FIELD embedding ON motor_cortex_attractors TYPE array<float>;
-            DEFINE INDEX idx_embedding ON motor_cortex_attractors COLUMNS embedding SEARCH HNSW DIMENSION 768 DIST COSINE;
+            DEFINE INDEX idx_embedding ON motor_cortex_attractors COLUMNS embedding SEARCH MTREE DIMENSION 768 DIST COSINE;
         ").await?;
 
         if let Ok(entries) = std::fs::read_dir("./.agents/skills") {
