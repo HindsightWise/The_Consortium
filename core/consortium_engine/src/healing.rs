@@ -4,7 +4,7 @@ use candle_transformers::models::bert::{Config, BertModel as NomicModel};
 use hf_hub::{api::tokio::Api, Repo, RepoType};
 use tokenizers::Tokenizer;
 use surrealdb::Surreal;
-use surrealdb::engine::local::SurrealKV;
+use surrealdb::engine::local::Db;
 use tracing::{info, warn};
 
 const MODEL_REPO: &str = "nomic-ai/nomic-embed-text-v1.5";
@@ -12,14 +12,14 @@ const MODEL_REVISION: &str = "main";
 const EMBED_DIM: usize = 768;
 
 pub struct MotorCortexHealing {
-    db: Surreal<SurrealKV>,
+    db: Surreal<Db>,
     model: NomicModel,
     tokenizer: Tokenizer,
     device: Device,
 }
 
 impl MotorCortexHealing {
-    pub async fn new(db: Surreal<SurrealKV>) -> Result<Self> {
+    pub async fn new(db: Surreal<Db>) -> Result<Self> {
         let device = Device::new_metal(0).unwrap_or(Device::Cpu);
 
         crate::ui_log!("   [🧬 MOTOR CORTEX] Downloading Nomic Embeddings from HuggingFace Hub...");
@@ -40,7 +40,8 @@ impl MotorCortexHealing {
         let tokenizer = Tokenizer::from_file(tokenizer_path)
             .map_err(|e| anyhow::anyhow!("Tokenizer load failed: {}", e))?;
 
-        let config = Config::from_file(config_path)?;
+        let config_str = std::fs::read_to_string(config_path)?;
+        let config: Config = serde_json::from_str(&config_str)?;
         let vb = unsafe {
             candle_nn::VarBuilder::from_mmaped_safetensors(
                 &[model_path],
@@ -107,7 +108,7 @@ impl MotorCortexHealing {
         let input_tensor = Tensor::new(input_ids, &self.device)?.unsqueeze(0)?;
         let mask_tensor = Tensor::new(attention_mask, &self.device)?.unsqueeze(0)?.to_dtype(DType::F32)?;
 
-        let hidden_states = self.model.forward(&input_tensor, &mask_tensor)?;
+        let hidden_states = self.model.forward(&input_tensor, &mask_tensor, None)?;
 
         let mask_expanded = mask_tensor.unsqueeze(2)?.broadcast_as(hidden_states.shape())?;
         let sum_masked = (hidden_states * mask_expanded)?.sum(1)?;
