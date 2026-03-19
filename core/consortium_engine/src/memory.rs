@@ -70,7 +70,7 @@ impl WorkingMemory {
     }
 
     /// [EXPLANATION]: This is the function the Engine calls to add new text (from you, from a tool, or from the LLM) into the buffer.
-    pub async fn inject(&mut self, role: &str, content: &str, _router: &ConsortiumRouter) -> usize {
+    pub async fn inject(&mut self, role: &str, content: &str, _router: &ConsortiumRouter, healer: &crate::healing::MotorCortexHealing) -> usize {
         // [EXPLANATION]: Push the new message into the end of the array.
         self.messages.push(Message {
             role: role.to_string(), // [EXPLANATION]: "user", "system", or "assistant"
@@ -86,7 +86,7 @@ impl WorkingMemory {
             // [EXPLANATION]: Log the warning to the UI, let the user know we are hitting limits.
             crate::ui_log!("   [🧠 CONSORTIUM] ⚠️ Working Memory saturated ({} tokens). Triggering 80% OBLIVION Protocol.", current_tokens);
             // [EXPLANATION]: Await the high-performance non-blocking PRUNE function to shrink the memory down.
-            let _ = oblivion_prune(&mut self.messages).await;
+            let _ = oblivion_prune(&mut self.messages, healer).await;
             // [EXPLANATION]: Re-calculate the new, much smaller size after compression.
             current_tokens = self.calculate_tokens();
 
@@ -115,8 +115,8 @@ pub struct PruneResult {
     pub tokens_reduced: usize,
 }
 
-pub async fn oblivion_prune(messages: &mut Vec<Message>) -> Result<PruneResult> {
-    let min_messages_to_keep = 25; // System prompt + enough recent context
+pub async fn oblivion_prune(messages: &mut Vec<Message>, healer: &crate::healing::MotorCortexHealing) -> Result<PruneResult> {
+    let min_messages_to_keep = 15; // System prompt + strict context
     let max_safe_tokens = EVICTION_THRESHOLD;
 
     if messages.is_empty() || messages.len() <= min_messages_to_keep {
@@ -133,9 +133,22 @@ pub async fn oblivion_prune(messages: &mut Vec<Message>) -> Result<PruneResult> 
         return Ok(PruneResult { messages_removed: 0, tokens_reduced: 0 });
     }
 
+    crate::ui_log!("   [🌌 CONSORTIUM] Engaging Phase 25: Relevance-Aware Semantic Pruning...");
+
+    // 1. Build Context Anchor (most recent 5 messages) to determine current thought trajectory
+    let anchor_start = if messages.len() > 5 { messages.len() - 5 } else { 1 };
+    let mut anchor_text = String::new();
+    for msg in &messages[anchor_start..] {
+        anchor_text.push_str(&msg.content);
+        anchor_text.push('\n');
+    }
+    
+    // Convert current conversation into a single 768-D Cartesian BAAI topology anchor
+    let anchor_vector = healer.embed_text(&anchor_text).unwrap_or_else(|_| vec![0.0; 768]);
+
     let mut removed = 0usize;
 
-    // Prune loop: remove from the oldest end (after index 0)
+    // Prune loop: dynamically score and evict orthogonal context
     while messages.len() > min_messages_to_keep {
         let current_tokens: usize = task::spawn_blocking({
             let msgs = messages.clone();
@@ -146,26 +159,43 @@ pub async fn oblivion_prune(messages: &mut Vec<Message>) -> Result<PruneResult> 
             break;
         }
 
-        // Remove oldest pair if possible (User + Assistant)
-        if messages.len() >= 3 {
-            // Check if index 1 is user and index 2 is assistant (common pattern)
-            let idx1 = &messages[1];
-            let idx2 = &messages[2];
-            if idx1.role == "user" && idx2.role == "assistant" {
-                messages.remove(1);
-                messages.remove(1); // now index 1 is what was 2
-                removed += 2;
-                continue;
+        // We only scan up to index len - 5 (to avoid amputating the exact anchor context)
+        // Keep index 0 strictly preserved (System Prompt)
+        let end_idx = if messages.len() > 5 { messages.len() - 5 } else { messages.len() - 1 };
+        
+        // Scan backwards and evaluate Cosine Math natively.
+        let mut most_distant_idx = 1;
+        let mut highest_distance = -1.0;
+        let mut target_emb = vec![];
+
+        for i in 1..end_idx {
+            let msg_text = &messages[i].content;
+            if let Ok(emb) = healer.embed_text(msg_text) {
+                // Determine Cosine Distance L2 equivalent: 1.0 - dot_product
+                let dot_product: f32 = emb.iter().zip(anchor_vector.iter()).map(|(a, b)| a * b).sum();
+                let cosine_distance = 1.0 - dot_product;
+
+                if cosine_distance > highest_distance {
+                    highest_distance = cosine_distance;
+                    most_distant_idx = i;
+                    target_emb = emb.clone();
+                }
             }
         }
 
-        // Fallback: remove single oldest message (after index 0)
-        if messages.len() > 1 {
-            messages.remove(1);
-            removed += 1;
-        } else {
-            crate::ui_log!("   [⚠️ CONSORTIUM] Oblivion reached safety floor unexpectedly");
-            break;
+        if highest_distance < 0.0 {
+            // Fallback chronological strip if the vector engine flatlined internally
+            most_distant_idx = 1;
+            target_emb = vec![0.0; 768];
+        }
+
+        // Execute the surgical excision
+        let evicted = messages.remove(most_distant_idx);
+        removed += 1;
+        
+        // Permanently persist the pruned matrix onto HDD Temporal Graph before true RAM death
+        if target_emb.len() == 768 {
+            let _ = healer.archive_pruned_memory(&evicted.role, &evicted.content, target_emb).await;
         }
     }
 

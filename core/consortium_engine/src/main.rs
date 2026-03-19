@@ -21,6 +21,7 @@ use hud::TelemetryUpdate;
 use std::sync::OnceLock;
 
 pub static HUD_TX: OnceLock<Sender<TelemetryUpdate>> = OnceLock::new();
+pub static TUI_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 #[macro_export]
 macro_rules! ui_log {
@@ -41,8 +42,11 @@ macro_rules! ui_log {
                 socialization_status: None,
                 verified_action: None,
                 follow_up_task: None,
-                log_message: Some(msg),
+                log_message: Some(msg.clone()),
             });
+        }
+        if !$crate::TUI_ACTIVE.load(std::sync::atomic::Ordering::Relaxed) {
+            print!("{}\r\n", msg);
         }
     }};
 }
@@ -221,7 +225,7 @@ You MUST respond strictly with a minified JSON object mapping your physical acti
     };
 
     // [EXPLANATION]: Inject exactly what you (the user) typed into the internal Working Memory tracker before the query fires.
-    let _ = working_memory.inject("user", input, router).await;
+    let _ = working_memory.inject("user", input, router, &healer).await;
 
     // [EXPLANATION]: Here is where the context window actually forms. 
     // We attach the `sys_msg` (rules) first, and then stack ALL prior historical messages from the Working Memory right beneath it.
@@ -293,7 +297,7 @@ You MUST respond strictly with a minified JSON object mapping your physical acti
 
                             // Injecting our own output into memory
                             let _ = working_memory
-                                .inject("assistant", clean_response, router)
+                                .inject("assistant", clean_response, router, &healer)
                                 .await;
 
                             return_action = ConsortiumAction::WroteFile;
@@ -331,7 +335,7 @@ You MUST respond strictly with a minified JSON object mapping your physical acti
 
                             // Injecting our own output into memory
                             let _ = working_memory
-                                .inject("assistant", clean_response, router)
+                                .inject("assistant", clean_response, router, &healer)
                                 .await;
 
                             return_action = ConsortiumAction::QueryUser;
@@ -440,7 +444,7 @@ You MUST respond strictly with a minified JSON object mapping your physical acti
 
                                     // Injecting our own output into memory
                                     let _ = working_memory
-                                        .inject("assistant", clean_response, router)
+                                        .inject("assistant", clean_response, router, &healer)
                                         .await;
                                 } else {
                                     crate::ui_log!("   [⚠️ CONSORTIUM] Failed to spawn shell command.");
@@ -473,7 +477,7 @@ You MUST respond strictly with a minified JSON object mapping your physical acti
                                     // [PROJECT AXIOM: PALADIN ZERO-TRUST] Enforce Trajectory Guardrails
                                     if !crate::paladin::Paladin::verify_trajectory(&client.server_name, tool_name) {
                                         crate::ui_log!("   [🛡️ PALADIN] 🛑 BLOCKING TRAJECTORY: Tentacle '{}' is strictly prohibited from executing action '{}'.", client.server_name, tool_name);
-                                        let _ = working_memory.inject("assistant", &format!("Action denied by Paladin Trajectory Firewall: '{}' is not authorized to call '{}'.", client.server_name, tool_name), router).await;
+                                        let _ = working_memory.inject("assistant", &format!("Action denied by Paladin Trajectory Firewall: '{}' is not authorized to call '{}'.", client.server_name, tool_name), router, &healer).await;
                                     } else {
                                         crate::ui_log!("   [🐙 CONSORTIUM] 🐙 DYNAMIC TENTACLE EXECUTION: {} -> {}", client.server_name, tool_name);
                                         
@@ -484,7 +488,7 @@ You MUST respond strictly with a minified JSON object mapping your physical acti
                                                 result.push_str("\n... [TENTACLE OUTPUT TRUNCATED TO PREVENT MEMORY BLOAT]");
                                             }
                                             crate::ui_log!("   [🐙 CONSORTIUM] ✅ Tentacle Response:\n{}", result);
-                                            let _ = working_memory.inject("assistant", &format!("Executed MCP tool '{}'. Result:\n{}", tool_name, result), router).await;
+                                            let _ = working_memory.inject("assistant", &format!("Executed MCP tool '{}'. Result:\n{}", tool_name, result), router, &healer).await;
 
                                             if let Some(tx) = HUD_TX.get() {
                                                 let _ = tx.send(hud::TelemetryUpdate {
@@ -507,13 +511,13 @@ You MUST respond strictly with a minified JSON object mapping your physical acti
                                         }
                                         Err(e) => {
                                             crate::ui_log!("   [⚠️ CONSORTIUM] ⚠️ Tentacle Execution Failed: {:?}", e);
-                                            let _ = working_memory.inject("assistant", &format!("Tried to execute '{}' but failed: {}", tool_name, e), router).await;
+                                            let _ = working_memory.inject("assistant", &format!("Tried to execute '{}' but failed: {}", tool_name, e), router, &healer).await;
                                         }
                                     }
                                 }
                                 } else {
                                     crate::ui_log!("   [⚠️ CONSORTIUM] ⚠️ Tried to call an MCP tool, but no Tentacle containing {} is active.", tool_name);
-                                    let _ = working_memory.inject("assistant", &format!("Tried to execute an MCP tool {}, but no external client containing it is attached.", tool_name), router).await;
+                                    let _ = working_memory.inject("assistant", &format!("Tried to execute an MCP tool {}, but no external client containing it is attached.", tool_name), router, &healer).await;
                                 }
                             }
                             return_action = ConsortiumAction::Unknown;
@@ -593,6 +597,7 @@ async fn main() -> anyhow::Result<()> {
     });
 
     // Start the Ratatui TUI Interface natively!
+    crate::TUI_ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
     let app = crate::tui::TuiApp::new(rx, tx_user);
     app.run()?;
 
