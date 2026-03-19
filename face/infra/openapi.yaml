@@ -1,0 +1,32 @@
+openapi: 3.1.0
+info:
+  title: The Consortium Core API
+  version: "1.0.0"
+  description: |
+    Unified boundary interface mapping Face requests to Core intelligence.
+    SOP 5.2 ENFORCED: Strict `/v1/` prefixing. Unversioned endpoints fail build.
+servers:
+  - url: https://api.theconsortium.network/v1
+paths:
+  /auth/uplink:
+    post:
+      summary: Establish persistent WebSocket connection.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Connection Upgraded.
+  /economics/setup_intent:
+    post:
+      summary: Register Stripe token, auth only for Fake-Door PMF validation.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Authorized.
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

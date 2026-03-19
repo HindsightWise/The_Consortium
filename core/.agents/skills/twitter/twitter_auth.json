@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "auth_token",
+      "value": "57d1771e3d0f7c4e7abe7ecb726df6aeda195912",
+      "domain": ".x.com",
+      "path": "/",
+      "expires": 1799000000,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "ct0",
+      "value": "da0bc4b374a24735e049794c5f3972cf0f16ecc6683f29f9ec619c4770d5e7e084bb62d91ec48f5a230554aa903b132e9d24896126ea7bed9d007d232da64c03752d8eec4239be60e482db8b0c1ceb8e",
+      "domain": ".x.com",
+      "path": "/",
+      "expires": 1799000000,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

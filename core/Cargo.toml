@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+members = [
+    "consortium_core",
+    "consortium_forge",
+    "consortium_simulacrum",
+    "consortium_engine",
+    "motor_wasi_src/entropy_sweep"
+, "consortium_mcp"]

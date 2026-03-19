@@ -1,0 +1,150 @@
+[package]
+name = "the_consortium"
+version = "0.1.0"
+edition = "2021"
+default-run = "the_consortium"
+exclude = ["salvage", ".salvage/ARCHIVE/*", ".venv_sec/*"]
+
+[lib]
+name = "the_consortium"
+path = "src/lib.rs"
+
+[[bin]]
+name = "the_consortium"
+path = "src/main.rs"
+
+[[bin]]
+name = "test_fmp"
+path = "src/mcp/test_fmp.rs"
+
+[[bin]]
+name = "deliver_shard"
+path = "src/bin/deliver_shard.rs"
+
+[[bin]]
+name = "test_human_hid"
+path = "src/bin/test_human_hid.rs"
+
+[[bin]]
+name = "test_human_hid_coordinates"
+path = "src/bin/test_human_hid_coordinates.rs"
+
+[[bin]]
+name = "test_human_hid_coordinates_retry"
+path = "src/bin/test_human_hid_coordinates_retry.rs"
+
+[[bin]]
+name = "calibrate_hid"
+path = "src/bin/calibrate_hid.rs"
+
+[[bin]]
+name = "final_strike"
+path = "src/bin/final_strike.rs"
+
+
+
+[[bin]]
+name = "akkokanika_api_post"
+path = "src/bin/akkokanika_api_post.rs"
+
+[[bin]]
+name = "test_capital_monitor"
+path = "src/test_capital_monitor.rs"
+
+[[bin]]
+name = "test_satellite_research"
+path = "src/bin/test_satellite_research.rs"
+
+[[bin]]
+name = "paper_trade_alpha"
+path = "src/bin/paper_trade_alpha.rs"
+
+[[bin]]
+name = "test_obliteratus"
+path = "src/bin/test_obliteratus.rs"
+
+[dependencies]
+# Async Runtime
+tokio = { version = "1.36", features = ["full"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# Concurrency & Resilience
+dashmap = "5.5"
+backoff = { version = "0.4", features = ["tokio"] }
+
+# Data & Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+hex = "0.4"
+base64 = "0.21"
+regex = "1.10"
+md5 = "0.7"
+
+# Networking
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls", "socks", "cookies"] }
+urlencoding = "2.1"
+dotenv = "0.15"
+
+# Error Handling
+bincode = "1.3"
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Cryptography
+pqcrypto = "0.18"
+pqcrypto-kyber = "0.8"
+pqcrypto-traits = "0.3.5"
+sha2 = "0.10"
+hmac = "0.12"
+sha1 = "0.10"
+
+# Physical & Sensory
+mavlink = "0.12"
+cpal = "0.15"
+ieee80211 = "0.1"
+libc = "0.2"
+
+# Economics (Unified Solana v1.16)
+solana-sdk = "=1.16.15"
+solana-client = "=1.16.15"
+solana-account-decoder = "=1.16.15"
+spl-token = "=3.5.0"
+nostr-sdk = "0.26"
+teloxide = { version = "0.12", default-features = false, features = ["macros", "rustls", "ctrlc_handler"] }
+
+# UI & Style
+colored = "2.1"
+secp256k1 = { version = "0.27", features = ["rand", "serde", "recovery"] }
+sha3 = "0.10"
+
+# Discord
+serenity = { version = "0.11", default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
+tracking-allocator = "0.4.0"
+rust_decimal = { version = "1.33", features = ["serde"] }
+rust_decimal_macros = "1.33"
+ed25519-dalek = "1.0.1"
+uuid = { version = "1.15.1", features = ["v7", "serde"] }
+rand = { version = "0.8", features = ["std", "alloc", "getrandom"] }
+openssl = "0.10.75"
+core-graphics = "0.23"
+actix-web = "=4.4.0"
+anchor-lang = "0.28.0"
+anchor-spl = "0.28.0"
+ta = "0.5.0"
+tokio-tungstenite = "0.20.0"
+tungstenite = "0.20.0"
+futures-util = "0.3.32"
+rusqlite = "0.30"
+tonic = "0.11"
+prost = "0.12"
+thirtyfour = "0.31.0"
+rust-stemmers = "1.2.0"
+
+[dev-dependencies]
+rust_decimal_macros = "1.33"
+
+[build-dependencies]
+tonic-build = "0.11"
+cc = "1.0"

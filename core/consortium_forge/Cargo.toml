@@ -1,0 +1,9 @@
+[package]
+name = "consortium_forge"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libloading = "0.8"
+anyhow = "1.0"
+tokio = { version = "1.36", features = ["full"] }

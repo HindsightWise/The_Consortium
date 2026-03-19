@@ -1,0 +1,14 @@
+{
+  "compliance": {
+    "tos_disclaimer": "The English version of this Terms of Service governs. Any translated copies are provided for convenience only. The Consortium legally absolves itself of mistranslation liabilities arising from non-English documentation."
+  },
+  "auth": {
+    "login_btn": "Initialize Uplink",
+    "logout_btn": "Sever Neural Link",
+    "opt_out_admt": "Disable Automated Profiling (CPRA Mandate)"
+  },
+  "commerce": {
+    "fake_door_label": "Proof-of-Stake (Card Authorization Only)",
+    "submit_payment": "Authorize Setup Intent"
+  }
+}

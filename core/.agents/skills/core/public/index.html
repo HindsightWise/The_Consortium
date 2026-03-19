@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AION MISSION CONTROL</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack-all.js"></script>
+
+    <style>
+      /* CORE THEME */
+      :root {
+        --bg-color: #d1d7da;
+        --card-bg: rgba(240, 242, 245, 0.85);
+        --text-primary: #1a1c1d;
+        --text-secondary: #4a4f52;
+        --success: #2d8a39;
+        --danger: #c42b2b;
+        --accent: #268bd2;
+        --font-stack: "JetBrains Mono", "Courier New", monospace;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-stack);
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: auto;
+      }
+
+      /* GRIDSTACK CARD STYLES */
+      .grid-stack-item-content {
+        background: var(--card-bg) !important;
+        border-radius: 6px;
+        padding: 8px !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      h3 {
+        margin: 0 0 8px 0;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        padding-bottom: 4px;
+        flex-shrink: 0;
+      }
+
+      .scroll-area {
+        flex-grow: 1;
+        overflow-y: auto;
+        min-height: 0;
+        font-size: 11px;
+        font-weight: 600; /* BOLD requested */
+      }
+
+      /* DATA TABLES */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+      }
+      .data-table th {
+        text-align: left;
+        opacity: 0.6;
+        padding-bottom: 4px;
+        position: sticky;
+        top: 0;
+        background: var(--card-bg);
+        z-index: 10;
+      }
+      .data-table td {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 3px 0;
+      }
+
+      /* MACRO GRID */
+      .cot-row {
+        display: grid;
+        grid-template-columns: 40px 1fr 1fr; /* Rigid Columns */
+        gap: 10px;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 8px 0;
+      }
+
+      .hist-container {
+        height: 45px;
+        background: rgba(0, 0, 0, 0.03);
+        position: relative;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+
+      .zero-line {
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.2);
+        z-index: 0;
+      }
+
+      .bar-wrapper {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        align-items: center;
+        padding: 0 1px;
+        gap: 1px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .bar-col {
+        flex: 1;
+        height: 100%;
+        position: relative;
+      }
+
+      .bar-fill {
+        position: absolute;
+        width: 100%;
+        opacity: 0.85;
+      }
+
+      .hist-label {
+        position: absolute;
+        top: 1px;
+        left: 2px;
+        font-size: 8px;
+        font-weight: 900;
+        z-index: 2;
+        opacity: 0.6;
+      }
+
+      /* SCROLLBARS */
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- FIXED HEADER -->
+    <div
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 35px;
+        background: rgba(210, 215, 218, 0.98);
+        z-index: 9999;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 15px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      "
+    >
+      <div style="display: flex; gap: 10px; align-items: center">
+        <span style="font-weight: 900; font-size: 14px">💠 AION CONTROL</span>
+        <span id="clock" style="font-size: 10px; font-family: monospace; opacity: 0.6">--:--</span>
+      </div>
+      <div>
+        <button
+          onclick="resetDashboard()"
+          style="
+            cursor: pointer;
+            padding: 2px 8px;
+            font-size: 10px;
+            border: 1px solid #aaa;
+            background: transparent;
+            border-radius: 3px;
+          "
+        >
+          🔄 RESET LAYOUT
+        </button>
+      </div>
+    </div>
+
+    <!-- GRID CONTAINER -->
+    <div class="grid-stack" style="margin-top: 45px">
+      <!-- MARKET OVERVIEW -->
+      <div class="grid-stack-item" gs-w="3" gs-h="4" gs-x="0" gs-y="0" id="card-market">
+        <div class="grid-stack-item-content">
+          <h3>📊 Market Intel</h3>
+          <div id="market-content" class="scroll-area">Loading...</div>
+        </div>
+      </div>
+
+      <!-- MACRO INTELLIGENCE -->
+      <div class="grid-stack-item" gs-w="6" gs-h="4" gs-x="3" gs-y="0" id="card-macro">
+        <div class="grid-stack-item-content">
+          <h3>👁️ Macro Intelligence</h3>
+          <div id="macro-content" class="scroll-area">Loading...</div>
+        </div>
+      </div>
+
+      <!-- STRATEGIC PROPOSALS -->
+      <div class="grid-stack-item" gs-w="3" gs-h="4" gs-x="9" gs-y="0" id="card-proposals">
+        <div class="grid-stack-item-content">
+          <h3>📜 Proposals</h3>
+          <div id="proposals-content" class="scroll-area">Loading...</div>
+        </div>
+      </div>
+
+      <!-- NEURAL STATE -->
+      <div class="grid-stack-item" gs-w="3" gs-h="3" gs-x="0" gs-y="4" id="card-neural">
+        <div class="grid-stack-item-content">
+          <h3>🧠 Neural State</h3>
+          <div
+            id="neural-content"
+            class="scroll-area"
+            style="
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+            "
+          >
+            <div style="font-size: 12px; margin-bottom: 5px">
+              STATUS: <span id="status-text" style="color: var(--success)">ONLINE</span>
+            </div>
+            <div
+              style="
+                width: 30px;
+                height: 30px;
+                background: var(--accent);
+                border-radius: 50%;
+                box-shadow: 0 0 10px var(--accent);
+              "
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DREAM STATE -->
+      <div class="grid-stack-item" gs-w="3" gs-h="3" gs-x="0" gs-y="7" id="card-dream">
+        <div class="grid-stack-item-content">
+          <h3>💭 Dream State</h3>
+          <div id="dream-content" class="scroll-area" style="font-size: 10px; line-height: 1.2">
+            ...
+          </div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIOS -->
+      <div class="grid-stack-item" gs-w="9" gs-h="6" gs-x="3" gs-y="4" id="card-portfolio">
+        <div class="grid-stack-item-content">
+          <h3>💼 Active Portfolios</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; height: 100%">
+            <div style="display: flex; flex-direction: column">
+              <div style="font-size: 9px; font-weight: bold; margin-bottom: 2px; opacity: 0.5">
+                AION (ALGO)
+              </div>
+              <div class="scroll-area">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ASSET</th>
+                      <th>QTY</th>
+                      <th>BASIS</th>
+                      <th>PRICE</th>
+                      <th>VALUE</th>
+                      <th>P/L</th>
+                      <th>24H</th>
+                    </tr>
+                  </thead>
+                  <tbody id="port-aion"></tbody>
+                </table>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column">
+              <div style="font-size: 9px; font-weight: bold; margin-bottom: 2px; opacity: 0.5">
+                USER (MANUAL)
+              </div>
+              <div class="scroll-area">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ASSET</th>
+                      <th>QTY</th>
+                      <th>BASIS</th>
+                      <th>PRICE</th>
+                      <th>VALUE</th>
+                      <th>P/L</th>
+                      <th>24H</th>
+                    </tr>
+                  </thead>
+                  <tbody id="port-user"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // --- UTILS ---
+      const $ = (id) => document.getElementById(id);
+
+      function resetDashboard() {
+        if (confirm("Reset Dashboard Layout?")) {
+          localStorage.removeItem("dashboard_grid_layout");
+          location.reload();
+        }
+      }
+
+      function updateClock() {
+        const now = new Date();
+        if ($("clock")) $("clock").innerText = now.toLocaleTimeString();
+      }
+
+      // --- RENDERERS ---
+
+      function renderNews(news) {
+        if (!news || !news.length)
+          return '<div style="opacity:0.5; padding:5px;">No Market Intel</div>';
+        return news
+          .slice(0, 100)
+          .map((n) => {
+            const sentimentColor =
+              n.sentiment === "Bullish"
+                ? "var(--success)"
+                : n.sentiment === "Bearish"
+                  ? "var(--danger)"
+                  : "var(--text-secondary)";
+            const time = n.timestamp ? n.timestamp.split("T")[1].substring(0, 5) : "--:--";
+            return `
+                <div style="border-bottom: 1px solid rgba(0,0,0,0.05); padding: 3px 0; line-height: 1.1;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:1px;">
+                        <span style="opacity:0.5; font-size:9px;">${time}</span>
+                        <span style="color:${sentimentColor}; font-size:9px; font-weight:900;">${n.sentiment ? n.sentiment.toUpperCase() : "N/A"}</span>
+                    </div>
+                    <div style="color:var(--text-primary); font-size:10px;">${n.headline}</div>
+                </div>`;
+          })
+          .join("");
+      }
+
+      function renderProposals(props) {
+        if (!props || !props.length)
+          return '<div style="opacity:0.5; padding:5px;">No Proposals</div>';
+        return props
+          .slice(0, 100)
+          .map((p) => {
+            const statusColor =
+              p.status === "EXECUTED" ? "var(--success)" : "var(--text-secondary)";
+            return `
+                <div style="border-bottom: 1px solid rgba(0,0,0,0.05); padding: 3px 0; line-height: 1.1;">
+                    <div style="display:flex; justify-content:space-between; font-weight:900;">
+                        <span>${p.action} ${p.asset}</span>
+                        <span style="color:${statusColor}; font-size:9px;">[${p.status.substring(0, 3)}]</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:9px; opacity:0.7;">
+                        <span>${p.size} @ ${p.price}</span>
+                        <span>${p.created_at || ""}</span>
+                    </div>
+                </div>`;
+          })
+          .join("");
+      }
+
+      function renderMacro(macro) {
+        if (!macro) return "<div>No Macro Data</div>";
+
+        let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+
+        // 1. Futures & Yields
+        if (macro.futures) {
+          html += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:10px;">
+                    <div>
+                        <div style="opacity:0.5; font-size:8px; font-weight:900;">FUTURES</div>
+                        ${macro.futures
+                          .map(
+                            (f) => `
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>${f.symbol}</span>
+                                <span style="color:${f.change_pct >= 0 ? "var(--success)" : "var(--danger)"}">${f.price.toLocaleString()}</span>
+                            </div>`,
+                          )
+                          .join("")}
+                    </div>
+                    <div>
+                        <div style="opacity:0.5; font-size:8px; font-weight:900;">YIELDS</div>
+                        ${(macro.yields || [])
+                          .map(
+                            (y) => `
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>${y.symbol}</span>
+                                <span style="color:${y.change_bps >= 0 ? "var(--danger)" : "var(--success)"}">${y.value.toFixed(3)}%</span>
+                            </div>`,
+                          )
+                          .join("")}
+                    </div>
+                </div>`;
+        }
+
+        // 2. COT
+        if (macro.cot_data) {
+          html += `<div style="opacity:0.5; font-size:8px; font-weight:900; margin-top:4px;">INSTITUTIONAL FLOW (24W)</div>`;
+
+          const drawHist = (hist, pColor, nColor) => {
+            if (!hist || !hist.length) return "";
+            // Limit to last 24 weeks
+            const data = hist.slice(-24);
+            return data
+              .map((val) => {
+                const pct = Math.min((Math.abs(val) / 100) * 100, 100);
+                const isPos = val >= 0;
+                const col = isPos ? pColor : nColor;
+                return `<div class="bar-col"><div class="bar-fill" style="background:${col}; height:${pct / 2}%; ${isPos ? "bottom:50%" : "top:50%"}"></div></div>`;
+              })
+              .join("");
+          };
+
+          const fPos = "#007aff",
+            fNeg = "#ff3b30";
+          const cPos = "#34c759",
+            cNeg = "#ff9500";
+
+          macro.cot_data.forEach((m) => {
+            html += `
+                    <div class="cot-row">
+                        <div style="font-weight:900; font-size:11px;">${m.asset}</div>
+                        
+                        <div class="hist-container">
+                            <div class="zero-line"></div>
+                            <div class="bar-wrapper">${drawHist(m.spec_history, fPos, fNeg)}</div>
+                            <span class="hist-label" style="color:${fPos}">FUNDS: ${m.latest_spec}</span>
+                        </div>
+
+                        <div class="hist-container">
+                            <div class="zero-line"></div>
+                            <div class="bar-wrapper">${drawHist(m.comm_history, cPos, cNeg)}</div>
+                            <span class="hist-label" style="color:${cPos}">COMM: ${m.latest_comm}</span>
+                        </div>
+                    </div>`;
+          });
+        }
+
+        html += "</div>";
+        return html;
+      }
+
+      function renderPortfolio(port, targetId) {
+        const el = $(targetId);
+        if (!el) return;
+        if (!port || !port.length) {
+          el.innerHTML = "<tr><td colspan='7'>Empty</td></tr>";
+          return;
+        }
+
+        el.innerHTML = port
+          .map((p) => {
+            const val = p.market_value || p.qty * p.current_price;
+            const pl = p.pl_pct || 0;
+            const chg = p.change_24h || 0;
+            return `<tr>
+                    <td style="font-weight:bold;">${p.symbol}</td>
+                    <td>${p.qty}</td>
+                    <td>$${(p.cost_basis || 0).toFixed(2)}</td>
+                    <td>$${(p.current_price || 0).toFixed(2)}</td>
+                    <td>$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                    <td style="color:${pl >= 0 ? "var(--success)" : "var(--danger)"}; font-weight:bold;">${pl >= 0 ? "+" : ""}${pl.toFixed(2)}%</td>
+                    <td style="color:${chg >= 0 ? "var(--success)" : "var(--danger)"}; opacity:0.8;">${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%</td>
+                </tr>`;
+          })
+          .join("");
+      }
+
+      // --- MAIN LOOP ---
+      async function runCycle() {
+        try {
+          const res = await fetch("/api/data");
+          if (!res.ok) throw new Error("API Failed");
+          const data = await res.json();
+
+          // Populate Sections
+          if ($("market-content")) $("market-content").innerHTML = renderNews(data.news);
+          if ($("proposals-content"))
+            $("proposals-content").innerHTML = renderProposals(data.proposals);
+          if ($("macro-content")) $("macro-content").innerHTML = renderMacro(data.macro);
+          if ($("dream-content") && data.dream)
+            $("dream-content").innerText = data.dream.replace(/##/g, "").trim();
+          if ($("status-text") && data.state)
+            $("status-text").innerText = data.state.status || "ONLINE";
+
+          if (data.portfolio) {
+            renderPortfolio(data.portfolio.aion, "port-aion");
+            renderPortfolio(data.portfolio.user, "port-user");
+          }
+        } catch (e) {
+          console.error("Dashboard Sync Error:", e);
+        }
+      }
+
+      // --- INIT ---
+      document.addEventListener("DOMContentLoaded", () => {
+        // 1. Init Grid
+        GridStack.init({
+          float: true,
+          cellHeight: 80,
+          minRow: 1,
+          margin: 8,
+          column: 12,
+        });
+
+        // 2. Load Layout
+        // (Optional, if we want to restore positions)
+
+        // 3. Start Loops
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        runCycle();
+        setInterval(runCycle, 2000);
+      });
+    </script>
+  </body>
+</html>

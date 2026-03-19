@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  apg_gateway:
+    build: .
+    ports:
+      - "80:8000"
+    restart: always
+    environment:
+      - ENVIRONMENT=production

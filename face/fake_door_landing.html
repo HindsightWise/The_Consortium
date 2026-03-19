@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Consortium | Early Access</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .neon-text { text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-2xl w-full glass rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
+        
+        <!-- Decorative Background Element -->
+        <div class="absolute -top-32 -right-32 w-64 h-64 bg-sky-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+
+        <div class="relative z-10 text-center space-y-8">
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight neon-text text-sky-400">
+                THE CONSORTIUM
+            </h1>
+            <p class="text-lg md:text-xl text-slate-300 font-light max-w-lg mx-auto leading-relaxed">
+                A 20-Node Cyber-Biological Intelligence Framework.
+                The Cephalo-Don is awakening. Secure your access to the private beta before atmospheric re-entry.
+            </p>
+
+            <div class="pt-6">
+                <!-- Stripe Fake-Door Intent Form -->
+                <form id="payment-form" class="space-y-6 max-w-md mx-auto">
+                    <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                        <label for="card-element" class="block text-sm font-medium text-slate-400 mb-2text-left">
+                            Proof-of-Stake (Card Authorization Only - $0.00 charged)
+                        </label>
+                        <div id="card-element" class="p-3 bg-slate-900 rounded-lg border border-slate-700">
+                            <!-- Stripe Elements will be inserted here -->
+                        </div>
+                        <div id="card-errors" role="alert" class="mt-2 text-sm text-red-500"></div>
+                    </div>
+
+                    <button id="submit-button" class="w-full bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-[0_0_15px_rgba(56,189,248,0.4)]">
+                        Initialize Connection & Authorize Setup
+                    </button>
+                    <p class="text-xs text-slate-500 text-center uppercase tracking-wider">
+                        SOP 1.1 ENFORCED. Setup intent mathematical verification required. No capture protocol authorized.
+                    </p>
+                </form>
+
+                <div id="success-message" class="hidden mt-6 p-4 bg-green-900/40 border border-green-500/50 rounded-xl">
+                    <p class="text-green-400 font-medium">Authorization Confirmed. Welcome to the Neural Link, operative.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SOP 1.1 Stripe Integration Logic (setup_intent strictly) -->
+    <script>
+        // Use a test publishable key for the Fake-Door protocol simulation
+        const stripe = Stripe('pk_test_TYooMQauvdEDq54NiTphI7jx');
+        const elements = stripe.elements();
+
+        // Custom styling can be passed to options when creating an Element.
+        const style = {
+            base: {
+                color: '#f8fafc',
+                fontFamily: '"Inter", sans-serif',
+                fontSmoothing: 'antialiased',
+                fontSize: '16px',
+                '::placeholder': {
+                    color: '#64748b'
+                }
+            },
+            invalid: {
+                color: '#ef4444',
+                iconColor: '#ef4444'
+            }
+        };
+
+        const card = elements.create('card', {style: style});
+        card.mount('#card-element');
+
+        card.on('change', function(event) {
+            const displayError = document.getElementById('card-errors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+        });
+
+        const form = document.getElementById('payment-form');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // UI Update: Loading State
+            const submitButton = document.getElementById('submit-button');
+            submitButton.disabled = true;
+            submitButton.innerHTML = 'Verifying Mathematical Conviction...';
+            submitButton.classList.add('opacity-75');
+
+            // In Phase 1 Fake-Door Protocol: We do not capture, we only generate a setup_intent.
+            // Because this is a static HTML page without a backend to create the setup_intent 'client_secret',
+            // we simulate the success callback structure to trigger the PMF threshold logic.
+            
+            setTimeout(() => {
+                // Mocking the Stripe SetupIntent response callback:
+                console.log("SOP 1.1: Stripe API setup_intent (Authorize Only) simulated transaction complete.");
+                
+                form.classList.add('hidden');
+                document.getElementById('success-message').classList.remove('hidden');
+                
+                // Logging event to fake metric tracker
+                console.log("METRIC LOGGED: successful_authorizations += 1");
+                
+            }, 1500);
+        });
+    </script>
+</body>
+</html>

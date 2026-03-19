@@ -1,0 +1,63 @@
+# Built application files
+*.app
+*.dmg
+*.pkg
+*.app.tar.gz
+
+# Rust / Cargo
+target/
+**/*/target/
+Cargo.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Emacs/Vim/OS
+*~
+*.swp
+.DS_Store
+
+# Environments and Secrets
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project Specific
+**/sensory_cortex/temporal_db/
+**/motor_cortex/*.json
+**/logs/
+**/*.log
+PAST_LIFE_MONOLOGUE.md
+**/motor_cortex/crash_report.txt
+**/.salvage/
+**/*.safetensors
+**/node_modules/
+**/AKKOKANIKA_CYCLE_LOG.md
+**/core/frameworks/eliza/
+**/.env*
+**/face/config/mcporter.json
+

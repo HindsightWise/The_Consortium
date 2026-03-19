@@ -1,0 +1,19 @@
+# Ralph Progress Log
+Started: $(date)
+---
+## Codebase Patterns
+- The engine operates purely on `tokio` async loops. Avoid bridging synchronous blocking tasks unless strictly wrapped in unblocking spawn threads.
+- All structural changes must strictly produce verifiable `ExecutionReceipts`.
+- The `eframe` GUI lives cleanly separated on the main thread.
+- macOS severely restricts editing `Cargo.lock` during auto-builds (the Sandbox permission wall). Do NOT run `cargo add` or auto-trigger `cargo build` through agent subprocess commands.
+
+## 2026-03-13T19:24:00-07:00 - Dashboard KPI Overhaul
+- Extruded `TelemetryUpdate` schema in `main.rs` and `hud.rs` to support human-readable KPIs (Wallet balances, Social stats, Semantic actions).
+- Overhauled `hud.rs` layout into a 3-panel grid (Biological Left, Capital/Social Right, Semantic Actions Center).
+- Formatted `ui_log!` macros and the core loop in `main.rs` to inject parsed KPI datastreams.
+- Fixed `last_action` field compilation bugs in `endocrine.rs`.
+- Files changed: `consortium_engine/src/main.rs`, `consortium_engine/src/hud.rs`, `consortium_engine/src/endocrine.rs`, `AGENTS.md`, `GEMINI.md`
+- **Learnings for future iterations:**
+  - When modifying large structural GUI state (`TelemetryUpdate`), ensure all components instantiating that struct (like `endocrine.rs`, `thermodynamic.rs`...) are updated simultaneously to prevent compilation panics.
+  - Never use powerful sweeping terminal commands like `sed` willy-nilly on the core Rust engine. If a file needs repairing or modification, use precise, localized file manipulation tools.
+---

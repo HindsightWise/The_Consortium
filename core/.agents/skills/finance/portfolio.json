@@ -1,0 +1,104 @@
+[
+    {
+        "symbol": "AMBA",
+        "qty": 25,
+        "avg_price": 80.75,
+        "name": "Ambarella Inc."
+    },
+    {
+        "symbol": "ATHR",
+        "qty": 900,
+        "avg_price": 6.99,
+        "name": "Atheros (Check Ticker - Likely Acquisition/Error, assuming archieved or different logic needed)"
+    },
+    {
+        "symbol": "BTBT",
+        "qty": 255,
+        "avg_price": 2.54,
+        "name": "Bit Digital, Inc."
+    },
+    {
+        "symbol": "CANOF",
+        "qty": 40000,
+        "avg_price": 0.29,
+        "name": "Canopy Growth Corp (OTC)"
+    },
+    {
+        "symbol": "FNV",
+        "qty": 20,
+        "avg_price": 189.96,
+        "name": "Franco-Nevada Corporation"
+    },
+    {
+        "symbol": "HE",
+        "qty": 450,
+        "avg_price": 11.02,
+        "name": "Hawaiian Electric Industries"
+    },
+    {
+        "symbol": "ITRI",
+        "qty": 150,
+        "avg_price": 104.96,
+        "name": "Itron, Inc."
+    },
+    {
+        "symbol": "MSTR",
+        "qty": 87,
+        "avg_price": 369.58,
+        "name": "MicroStrategy"
+    },
+    {
+        "symbol": "O",
+        "qty": 160,
+        "avg_price": 60.60,
+        "name": "Realty Income Corporation"
+    },
+    {
+        "symbol": "TGT",
+        "qty": 100,
+        "avg_price": 102.65,
+        "name": "Target Corporation"
+    },
+    {
+        "symbol": "TMQ",
+        "qty": 854,
+        "avg_price": 4.98,
+        "name": "Trilogy Metals Inc."
+    },
+    {
+        "symbol": "TSLA",
+        "qty": 135,
+        "avg_price": 270.34,
+        "name": "Tesla, Inc."
+    },
+    {
+        "symbol": "TSM",
+        "qty": 14,
+        "avg_price": 234.69,
+        "name": "Taiwan Semiconductor"
+    },
+    {
+        "symbol": "BSOL",
+        "qty": 600,
+        "avg_price": 20.59,
+        "name": "Blue Sol? (Assuming typo for BSOL/or similar, will research)"
+    },
+    {
+        "symbol": "MSTY",
+        "qty": 250,
+        "avg_price": 77.35,
+        "name": "YieldMax MSTR Option Income Strategy ETF"
+    },
+    {
+        "symbol": "VNQ",
+        "qty": 100,
+        "avg_price": 90.32,
+        "name": "Vanguard Real Estate ETF"
+    },
+    {
+        "symbol": "CASH",
+        "qty": 19500.35,
+        "avg_price": 1.00,
+        "name": "USD Buying Power"
+    }
+]

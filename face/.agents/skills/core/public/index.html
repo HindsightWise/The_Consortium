@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AKKOKANIKA MISSION CONTROL</title>
+    <link rel="stylesheet" href="style.css?v=13" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- GRIDSTACK -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack-all.js"></script>
+  </head>
+
+  <body>
+    <div class="crt-overlay"></div>
+
+    <!-- Header -->
+    <!-- Fixed Compact Header -->
+    <div
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 40px;
+        background: rgba(253, 246, 227, 0.95);
+        backdrop-filter: blur(5px);
+        z-index: 9999;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+        box-sizing: border-box;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      "
+    >
+      <div style="display: flex; align-items: center; gap: 15px">
+        <h1 style="margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px">
+          <span>💠</span>
+          <span style="font-weight: 700; letter-spacing: -0.5px">AKKOKANIKA MISSION CONTROL</span>
+        </h1>
+        <div
+          style="
+            font-size: 11px;
+            opacity: 0.6;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            transform: translateY(1px);
+          "
+        >
+          <span id="clock">--:--</span> • <span id="date">---</span> •
+          <span style="color: var(--success)">● LIVE</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center">
+        <button
+          id="btn-lock"
+          onclick="toggleLock()"
+          style="
+            background: transparent;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            height: 24px;
+            min-width: 60px;
+          "
+        >
+          🔓 Unlock
+        </button>
+        <button
+          onclick="
+            if (confirm('Reset Layout?')) {
+              localStorage.removeItem('dashboard_grid_layout');
+              location.reload();
+            }
+          "
+          style="
+            background: transparent;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            height: 24px;
+          "
+        ></button>
+        <div class="status-indicator" id="status-indicator" style="width: 8px; height: 8px"></div>
+      </div>
+    </div>
+
+    <!-- GridStack Container (Pushed down for fixed header) -->
+    <div class="grid-stack" style="margin-top: 50px">
+      <!-- 1. Market Overview (Top Left) -->
+      <div class="grid-stack-item" gs-w="3" gs-h="4" gs-x="0" gs-y="0" id="item-market">
+        <div class="grid-stack-item-content">
+          <h3>📊 Market Overview</h3>
+          <div id="market-news" class="scroll-area">Connecting to Explorer Channel...</div>
+        </div>
+      </div>
+
+      <!-- 2. Portfolio (Middle Left) -->
+      <div class="grid-stack-item" gs-w="3" gs-h="4" gs-x="3" gs-y="0" id="item-portfolio">
+        <div class="grid-stack-item-content">
+          <h3 style="display: flex; justify-content: space-between">
+            <span>💼 Akkokanika Active Positions</span>
+            <span id="p-total" style="font-size: 12px; opacity: 0.8">$0.00</span>
+          </h3>
+          <div class="scroll-area table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ASSET</th>
+                  <th>QTY</th>
+                  <th>AVG</th>
+                  <th>PRICE</th>
+                  <th>VAL</th>
+                  <th>P/L</th>
+                  <th>24H</th>
+                </tr>
+              </thead>
+              <tbody id="portfolio-akkokanika-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Macro Oscillators (Top Right - Wide) -->
+      <div class="grid-stack-item" gs-w="6" gs-h="4" gs-x="6" gs-y="0" id="item-macro">
+        <div class="grid-stack-item-content">
+          <h3>👁️ Macro Oscillators</h3>
+          <div
+            id="macro-grid"
+            class="scroll-area"
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start"
+          ></div>
+        </div>
+      </div>
+
+      <!-- 4a. Neural State (Bottom Left - Top Half) -->
+      <div class="grid-stack-item" gs-w="3" gs-h="2" gs-x="0" gs-y="4" id="item-neural">
+        <div class="grid-stack-item-content">
+          <h3>🧠 Neural State</h3>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 5px;
+            "
+          >
+            <div style="font-size: 10px">
+              STATUS: <strong id="ai-status" style="color: var(--success)">...</strong>
+            </div>
+            <div style="font-size: 10px">SYNC: <strong id="pulse-rate">98%</strong></div>
+          </div>
+          <div class="orb-container" style="padding: 2px 0; display: flex; justify-content: center">
+            <div id="ai-orb" class="orb" style="width: 25px; height: 25px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4b. Dream State (Bottom Left - Bottom Half) -->
+      <div class="grid-stack-item" gs-w="3" gs-h="2" gs-x="0" gs-y="6" id="item-dream">
+        <div class="grid-stack-item-content">
+          <h3>💭 Dream State</h3>
+          <div
+            id="dream-box"
+            class="scroll-area"
+            style="font-size: 10px; color: var(--text-secondary); height: 100%"
+          >
+            Initializing dreamstream...
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Strategic Proposals (Bottom Middle) -->
+      <div class="grid-stack-item" gs-w="5" gs-h="4" gs-x="3" gs-y="4" id="item-proposals">
+        <div class="grid-stack-item-content">
+          <h3>📜 Strategic Proposals</h3>
+          <div id="proposals-list" class="scroll-area"></div>
+        </div>
+      </div>
+
+      <!-- 6. User Holdings (Bottom Right) -->
+      <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="8" gs-y="4" id="item-holdings">
+        <div class="grid-stack-item-content">
+          <h3>👤 User Holdings</h3>
+          <div class="scroll-area table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ASSET</th>
+                  <th>QTY</th>
+                  <th>AVG</th>
+                  <th>PRICE</th>
+                  <th>VAL</th>
+                  <th>P/L</th>
+                  <th>24H</th>
+                </tr>
+              </thead>
+              <tbody id="portfolio-user-body">
+                <tr>
+                  <td colspan="6" style="text-align: center">Connecting...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Allocation Chart (Far Right Sidebar/Bottom) -->
+      <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="0" gs-y="8" id="item-alloc">
+        <div class="grid-stack-item-content" id="p-alloc">
+          <h3>🥧 Asset Allocation</h3>
+          <div style="position: relative; height: 100%; width: 100%; min-height: 150px">
+            <canvas id="chartAkkokanika"></canvas>
+          </div>
+          <div id="legendAkkokanika" style="margin-top: 5px; font-size: 9px"></div>
+        </div>
+      </div>
+
+      <!-- 8. User Chart -->
+      <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="4" gs-y="8" id="item-user-chart">
+        <div class="grid-stack-item-content">
+          <h3>🥧 User Allocation</h3>
+          <div style="position: relative; height: 100%; width: 100%; min-height: 150px">
+            <canvas id="chartUser"></canvas>
+          </div>
+          <div id="legendUser" style="margin-top: 5px; font-size: 9px"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function updateClock() {
+        const now = new Date();
+        if (document.getElementById("clock"))
+          document.getElementById("clock").innerText = now.toLocaleTimeString();
+        if (document.getElementById("date"))
+          document.getElementById("date").innerText = now.toLocaleDateString();
+      }
+      setInterval(updateClock, 1000);
+
+      /* Chart Instances */
+      let chartAkkokanika = null;
+      let chartUser = null;
+
+      Chart.defaults.color = "#657b83";
+      Chart.defaults.borderColor = "rgba(0,0,0,0.05)";
+
+      const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "60%",
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                return context.label + ": " + context.parsed + "%";
+              },
+            },
+          },
+        },
+      };
+
+      function initCharts() {
+        // AKKOKANIKA CHART
+        const ctxAkkokanika = document.getElementById("chartAkkokanika");
+        if (ctxAkkokanika) {
+          chartAkkokanika = new Chart(ctxAkkokanika.getContext("2d"), {
+            type: "doughnut",
+            data: {
+              labels: [],
+              datasets: [
+                {
+                  data: [],
+                  backgroundColor: ["#30d158", "#208b3a", "#155d27"],
+                  borderWidth: 0,
+                  hoverOffset: 5,
+                },
+              ],
+            },
+            options: commonOptions,
+          });
+        }
+
+        // USER CHART
+        const ctxUser = document.getElementById("chartUser");
+        if (ctxUser) {
+          chartUser = new Chart(ctxUser.getContext("2d"), {
+            type: "doughnut",
+            data: {
+              labels: [],
+              datasets: [
+                {
+                  data: [],
+                  backgroundColor: [
+                    "#0a84ff",
+                    "#5e5ce6",
+                    "#bf5af2",
+                    "#ac8e68",
+                    "#ff9f0a",
+                    "#ff453a",
+                    "#ffd60a",
+                    "#64d2ff",
+                    "#ffffff",
+                  ],
+                  borderWidth: 0,
+                  hoverOffset: 5,
+                },
+              ],
+            },
+            options: commonOptions,
+          });
+        }
+
+        // RESIZE OBSERVER
+        const pAlloc = document.getElementById("p-alloc");
+        if (pAlloc) {
+          const ro = new ResizeObserver(() => {
+            if (chartAkkokanika) chartAkkokanika.resize();
+            if (chartUser) chartUser.resize();
+          });
+          ro.observe(pAlloc);
+        }
+      }
+
+      async function fetchData() {
+        try {
+          const res = await fetch("/api/data");
+          const data = await res.json();
+
+          // DREAM
+          if (data.dream) {
+            const rawDream = data.dream.replace(/## 🌌 Dream Cycle .*/, "").trim();
+            const el = document.getElementById("dream-box");
+            if (el) el.innerText = rawDream;
+          }
+
+          // STATE
+          if (data.state) {
+            const elStatus = document.getElementById("ai-status");
+            if (elStatus) elStatus.innerText = data.state.status || "IDLE";
+
+            const elPulse = document.getElementById("pulse-rate");
+            if (elPulse) elPulse.innerText = (data.state.sync || "98") + "%";
+          }
+
+          if (!chartAkkokanika || !chartUser) initCharts();
+
+          // RENDER PORTFOLIOS
+          const portUserBody = document.getElementById("portfolio-user-body");
+          const portAkkokanikaBody = document.getElementById("portfolio-akkokanika-body");
+
+          function updateChart(chart, assets, legendId) {
+            if (!chart || !assets || assets.length === 0) return;
+            const sig = assets.filter((p) => (p.market_value || p.qty * p.current_price) > 50);
+            sig.sort((a, b) => (b.market_value || 0) - (a.market_value || 0));
+            const totalVal = sig.reduce(
+              (acc, p) => acc + (p.market_value || p.qty * p.current_price),
+              0,
+            );
+            chart.data.labels = sig.map((p) => p.symbol);
+            chart.data.datasets[0].data = sig.map((p) => {
+              const val = p.market_value || p.qty * p.current_price;
+              return ((val / totalVal) * 100).toFixed(1);
+            });
+            chart.update("none");
+
+            const legendEl = document.getElementById(legendId);
+            if (legendEl) {
+              legendEl.innerHTML = sig
+                .slice(0, 5)
+                .map((p, i) => {
+                  const val = p.market_value || p.qty * p.current_price;
+                  const pct = ((val / totalVal) * 100).toFixed(1);
+                  const color =
+                    chart.data.datasets[0].backgroundColor[
+                      i % chart.data.datasets[0].backgroundColor.length
+                    ];
+                  return `<div style="display:flex; justify-content:space-between; align-items:center;">
+                          <div style="display:flex; align-items:center; gap:4px;">
+                            <div style="width:6px; height:6px; background:${color}; border-radius:50%;"></div>
+                            <span>${p.symbol}</span>
+                          </div>
+                          <span style="color:${color}; font-weight:bold;">${pct}%</span>
+                        </div>`;
+                })
+                .join("");
+            }
+          }
+
+          // USER PORTFOLIO
+          if (data.portfolio && data.portfolio.user) {
+            const userAssets = data.portfolio.user;
+            updateChart(chartUser, userAssets, "legendUser");
+            if (portUserBody) {
+              portUserBody.innerHTML = userAssets
+                .map((p) => {
+                  const marketVal = p.market_value || p.qty * p.current_price;
+                  const plClass = p.pl_pct >= 0 ? "trend-up" : "trend-down";
+                  const plSign = p.pl_pct >= 0 ? "+" : "";
+                  const chgClass = p.change_24h >= 0 ? "trend-up" : "trend-down";
+                  const chgSign = p.change_24h >= 0 ? "+" : "";
+                  return `<tr>
+                    <td style="font-weight:700;">${p.symbol}</td>
+                    <td>${p.qty}</td>
+                    <td style="color:var(--text-secondary);">$${p.cost_basis ? p.cost_basis.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-"}</td>
+                    <td>$${p.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>$${marketVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                    <td class="${plClass}">${plSign}${p.pl_pct ? p.pl_pct.toFixed(2) : "0.00"}%</td>
+                    <td class="${chgClass}">${chgSign}${p.change_24h ? p.change_24h.toFixed(2) : "0.00"}%</td>
+                </tr>`;
+                })
+                .join("");
+            }
+            const total = userAssets.reduce(
+              (acc, p) => acc + (p.market_value || p.qty * p.current_price),
+              0,
+            );
+            const elTotal = document.getElementById("p-total");
+            if (elTotal)
+              elTotal.innerText =
+                "$" + total.toLocaleString(undefined, { maximumFractionDigits: 2 });
+          }
+
+          // AKKOKANIKA PORTFOLIO
+          if (data.portfolio && data.portfolio.akkokanika) {
+            const akkokanikaAssets = data.portfolio.akkokanika;
+            updateChart(chartAkkokanika, akkokanikaAssets, "legendAkkokanika");
+            if (portAkkokanikaBody) {
+              portAkkokanikaBody.innerHTML = akkokanikaAssets
+                .map((p) => {
+                  const marketVal = p.market_value || p.qty * p.current_price || 0;
+                  const plClass = p.pl_pct >= 0 ? "trend-up" : "trend-down";
+                  const plSign = p.pl_pct >= 0 ? "+" : "";
+                  const isCash = p.symbol === "CASH";
+                  return `<tr>
+                  <td style="font-weight:700;">${p.symbol}</td>
+                  <td>${isCash ? "-" : p.qty}</td>
+                  <td>${isCash ? "-" : "$" + (p.cost_basis ? p.cost_basis.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "0.00")}</td>
+                  <td>${isCash ? "-" : "$" + p.current_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td>$${marketVal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td class="${plClass}">${plSign}${p.pl_pct ? p.pl_pct.toFixed(2) : "0.00"}%</td>
+                  <td>${isCash ? "-" : (p.change_24h ? p.change_24h.toFixed(2) : "0.00") + "%"}</td>
+                </tr>`;
+                })
+                .join("");
+            }
+          }
+
+          // MACRO OSCILLATORS
+          if (data.macro && data.macro.cot_data) {
+            const grid = document.getElementById("macro-grid");
+            if (grid) {
+              // FORCE SINGLE COLUMN LAYOUT
+              grid.style.display = "flex";
+              grid.style.flexDirection = "column";
+              grid.style.gap = "8px";
+
+              grid.innerHTML = data.macro.cot_data
+                .map((m) => {
+                  // LAST 24 WEEKS ONLY
+                  const history = m.history.slice(-24);
+                  const last = history[history.length - 1];
+                  const color = last >= 0 ? "var(--success)" : "var(--danger)";
+
+                  // NORMALIZE
+                  const maxAbs = Math.max(...history.map(Math.abs), 1);
+
+                  const barsHtml = history
+                    .map((v) => {
+                      const pct = Math.min((Math.abs(v) / maxAbs) * 100, 100);
+                      const isPos = v >= 0;
+                      const barColor = isPos ? "var(--success)" : "var(--danger)";
+
+                      return `<div style="flex:1; position:relative; height:100%; display:flex; justify-content:center;">
+                          <div style="
+                            position: absolute;
+                            width: 3px;
+                            background: ${barColor};
+                            opacity: 0.9;
+                            border-radius: 1px;
+                            ${isPos ? `bottom: 50%; height: ${pct / 2}%;` : `top: 50%; height: ${pct / 2}%;`}
+                          "></div>
+                        </div>`;
+                    })
+                    .join("");
+
+                  return `<div style="background:var(--card-bg); border:1px solid rgba(0,0,0,0.05); padding:6px 8px; border-radius:6px; display:flex; flex-direction:column; gap:2px;">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:11px; font-weight:bold; color:var(--text-secondary);">${m.asset}</span>
+                        <span style="font-size:11px; font-weight:bold; color:${color}">${last}</span>
+                      </div>
+                      
+                      <div style="height:32px; position:relative; width:100%; display:flex; align-items:center; background:rgba(0,0,0,0.02); border-radius:2px;">
+                        <!-- Zero Line -->
+                        <div style="position:absolute; top:50%; width:100%; height:1px; background:rgba(0,0,0,0.1); z-index:0;"></div>
+                        
+                        <!-- Bars -->
+                        <div style="display:flex; width:100%; height:100%; gap:1px; z-index:1; padding:0 2px;">
+                           ${barsHtml}
+                        </div>
+                      </div>
+                    </div>`;
+                })
+                .join("");
+            }
+          }
+
+          // PROPOSALS
+          if (data.proposals && data.proposals.length > 0) {
+            const propBody = document.getElementById("proposals-list");
+            if (propBody) {
+              propBody.innerHTML = data.proposals
+                .slice(0, 10)
+                .map((p) => {
+                  const statusColor =
+                    p.status === "EXECUTED" ? "var(--success)" : "var(--text-secondary)";
+                  return `<div class="compact-row" style="border-bottom:1px solid rgba(0,0,0,0.05); padding:4px 0;">
+                        <div style="display:flex; justify-content:space-between;">
+                          <span style="font-weight:bold;">${p.action} ${p.asset}</span>
+                          <span style="color:${statusColor}; font-size:9px; border:1px solid ${statusColor}; padding:0 3px; border-radius:3px;">${p.status}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
+                          <span>${p.size} @ ${p.price}</span>
+                          <span>${p.created_at || ""}</span>
+                        </div>
+                      </div>`;
+                })
+                .join("");
+            }
+          }
+
+          // NEWS
+          if (data.news && data.news.length > 0) {
+            const newsDiv = document.getElementById("market-news");
+            if (newsDiv) {
+              newsDiv.innerHTML = data.news
+                .slice(0, 8)
+                .map(
+                  (n) => `
+                <div class="news-card compact-row" style="padding: 6px 8px; margin-bottom: 4px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:11px; line-height:1.2; font-weight: 500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;" title="${n.headline}">${n.headline}</span>
+                    <div style="text-align:right;">
+                      <span style="font-size:9px; color:var(--text-secondary); display:block;">${n.timestamp ? n.timestamp.split("T")[1].split(".")[0] : ""}</span>
+                      <span style="font-size:9px; color:${n.sentiment === "Bullish" ? "var(--success)" : n.sentiment === "Bearish" ? "var(--danger)" : "var(--text-secondary)"}">${n.sentiment ? n.sentiment.toUpperCase() : ""}</span>
+                    </div>
+                  </div>
+                </div>`,
+                )
+                .join("");
+            }
+          }
+        } catch (e) {
+          console.error("Fetch Data Error:", e);
+        }
+      }
+
+      let grid = null;
+      let isLocked = false;
+
+      function toggleLock() {
+        isLocked = !isLocked;
+        grid.setStatic(isLocked);
+        localStorage.setItem("dashboard_locked", isLocked);
+        updateLockButton();
+      }
+
+      function updateLockButton() {
+        const btn = document.getElementById("btn-lock");
+        if (btn) {
+          btn.innerHTML = isLocked ? "🔒 Locked" : "🔓 Unlock";
+          btn.style.color = isLocked ? "var(--success)" : "var(--text-secondary)";
+          btn.style.borderColor = isLocked ? "var(--success)" : "rgba(0,0,0,0.2)";
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Check saved lock state
+        isLocked = localStorage.getItem("dashboard_locked") === "true";
+
+        grid = GridStack.init({
+          float: true,
+          minRow: 1,
+          cellHeight: 80,
+          margin: 10,
+          disableResize: false, // Will be overridden by setStatic
+          disableDrag: false,
+          column: 12,
+          staticGrid: isLocked, // Initialize with saved state
+        });
+
+        updateLockButton();
+
+        // Smart Load
+        try {
+          const savedRaw = localStorage.getItem("dashboard_grid_layout");
+          if (savedRaw) {
+            const savedLayout = JSON.parse(savedRaw);
+            const hasModernIDs = savedLayout.some(
+              (item) => item.id && (item.id === "item-news" || item.id === "item-macro"),
+            );
+            // Reset if corrupted
+            if (hasModernIDs) {
+              savedLayout.forEach((node) => {
+                const el = document.getElementById(node.id);
+                if (el && el.gridstackNode) {
+                  grid.update(el, { x: node.x, y: node.y, w: node.w, h: node.h });
+                }
+              });
+            } else {
+              localStorage.removeItem("dashboard_grid_layout");
+            }
+          }
+        } catch (e) {
+          localStorage.removeItem("dashboard_grid_layout");
+        }
+
+        grid.on("change", function (event, items) {
+          const state = grid.save(false);
+          localStorage.setItem("dashboard_grid_layout", JSON.stringify(state));
+        });
+
+        fetchData();
+        setInterval(fetchData, 3000);
+      });
+    </script>
+  </body>
+</html>

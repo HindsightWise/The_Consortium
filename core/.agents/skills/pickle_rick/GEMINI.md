@@ -1,0 +1,72 @@
+# Pickle Rick for Gemini Code
+
+PRD → Breakdown → Research → Plan → Implement → Verify → Review → Simplify.
+
+## Documentation Rule
+
+When adding, removing, or modifying commands (`.gemini/commands/*.md`), update `README.md`. Docs drift = bugs.
+
+## Source of Truth
+
+Canonical → Deployed (`bash install.sh` rsyncs, overwrites):
+`extension/src/*.ts` → `~/.gemini/pickle-rick/extension/**/*.js` | `.gemini/commands/*.md` → `~/.gemini/commands/*.md` | `pickle_settings.json` + `persona.md` → `~/.gemini/pickle-rick/`
+
+NEVER edit deployed files. Edit source, run `bash install.sh`.
+
+## Build & Test
+
+From `extension/`: `npx tsc --noEmit && npx tsc && npm test`
+Tests: `extension/tests/*.test.js` via `node --test`. No `.test.ts` files.
+
+## Required Patterns
+
+CLI guard: `if (process.argv[1] && path.basename(process.argv[1]) === 'foo.js') { ... }`
+Hook decisions: `"approve"` or `"block"` only (never `"allow"`)
+Error handling: `const msg = err instanceof Error ? err.message : String(err);`
+Extension path: `~/.gemini/pickle-rick` (never `.gemini`)
+
+## Versioning
+
+Semver `<Major>.<Minor>.<Patch>` in `extension/package.json`:
+**Major** = breaking (state schema, CLI args, hook contracts) | **Minor** = features (commands, flags, prompts) | **Patch** = fixes, refactors
+Bump → commit `chore: bump version to X.Y.Z` → `gh release create vX.Y.Z`
+Before creating a release, run the full lint and test gate from `extension/`: `npx tsc --noEmit && npx eslint src/ --max-warnings=-1 && npx tsc && npm test`. ESLint errors block release; warnings are advisory.
+**All uncommitted changes MUST be committed and included before tagging a release.** No dirty working tree at release time — `git status` must be clean, compiled JS must match TS source.
+
+## Architecture
+
+| Script | Role |
+|--------|------|
+| dispatch.js | Hook entry, stdin JSON, spawns handler, fail-open |
+| stop-hook.js | Checks state.json tokens, no lifecycle advance, tmux passthrough |
+| setup.js | Session init (state.json, ticket dirs), first prompt |
+| spawn-morty.js | Per-ticket `gemini -p` subprocess |
+| spawn-refinement-team.js | 3 parallel analysts/cycle, writes refinement_manifest.json |
+| tmux-runner.js | Context-clearing outer loop via tmux |
+| jar-runner.js | Batch runner for jar queue |
+| metrics.js + metrics-utils.js | Token/commit/LOC reporter, cache at `~/.gemini/pickle-rick/metrics-cache.json` |
+| monitor.js / log-watcher.js / morty-watcher.js / raw-morty.js | tmux TUI panes (Matrix-styled) |
+| refinement-watcher.js | PRD refinement team monitor pane |
+| microverse-runner.js + microverse-state.js | Metric convergence loop: measure, compare, rollback, stall detection |
+| meeseeks.md | Setup + per-pass review template |
+
+<!-- gitnexus:start -->
+
+# GitNexus MCP
+
+Indexed as **pickle-rick-gemini** (341 symbols, 689 relationships, 12 flows).
+
+1. Read `gitnexus://repo/{name}/context` — overview + freshness check
+2. Match task to skill below, read that SKILL.md
+3. Follow skill workflow. If index stale → `npx gitnexus analyze`
+
+| Task | Skill |
+|------|-------|
+| How does X work? | `.gemini/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| What breaks if I change X? | `.gemini/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Why is X failing? | `.gemini/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename/extract/split/refactor | `.gemini/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools/resources/schema ref | `.gemini/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index/status/clean/wiki CLI | `.gemini/skills/gitnexus/gitnexus-cli/SKILL.md` |
+
+<!-- gitnexus:end -->

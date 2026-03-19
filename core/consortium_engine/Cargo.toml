@@ -1,0 +1,32 @@
+[package]
+name = "consortium_engine"
+version = "0.1.0"
+edition = "2021"
+default-run = "consortium_engine"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.36", features = ["full"] }
+reqwest = { version = "0.11", features = ["json"] }
+consortium_core = { path = "../consortium_core" }
+consortium_forge = { path = "../consortium_forge" }
+anyhow = "1.0"
+dotenvy = "0.15"
+notify = "6.1.1"
+tiktoken-rs = "0.5.8"
+dirs = "6.0.0"
+surrealdb = { version = "1.4", features = ["kv-surrealkv"] }
+wasmtime = "42.0.1"
+wasmtime-wasi = "42.0.1"
+wasmtime-wasi-http = "42.0.1"
+cap-std = "4.0.2"
+mlx-rs = { version = "0.25.3", features = ["metal"] }
+ratatui = "0.26"
+crossterm = "0.27"
+crossbeam-channel = "0.5"
+tokio-tungstenite = { version = "0.20", features = ["native-tls"] }
+futures-util = "0.3"
+candle-core = { version = "0.8.2", features = ["metal", "accelerate"] }
+rand = "0.8"
+flate2 = "1.0"

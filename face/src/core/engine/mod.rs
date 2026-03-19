@@ -1,0 +1,11 @@
+pub mod orchestrator;
+pub mod will;
+pub mod state;
+pub mod planning;
+pub mod evolver;
+pub mod conductor;
+pub mod mind_palace;
+pub mod simulator;
+pub mod genesis;
+pub mod chimera_kernel;
+pub mod test_braces;

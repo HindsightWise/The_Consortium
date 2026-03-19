@@ -1,0 +1,26 @@
+{
+  "basket_id": "SOVEREIGN_CORE_001",
+  "last_updated": "2026-02-23",
+  "assets": [
+    { "symbol": "NVDA", "type": "Equity", "truth_coord": "Santa Clara, CA", "proxy": "Data Center Load" },
+    { "symbol": "TSLA", "type": "Equity", "truth_coord": "Austin, TX", "proxy": "Factory Throughput" },
+    { "symbol": "AAPL", "type": "Equity", "truth_coord": "Cupertino, CA", "proxy": "Supply Chain Velocity" },
+    { "symbol": "MSFT", "type": "Equity", "truth_coord": "Redmond, WA", "proxy": "Cloud Infrastructure" },
+    { "symbol": "META", "type": "Equity", "truth_coord": "Menlo Park, CA", "proxy": "Compute Consumption" },
+    { "symbol": "GOOGL", "type": "Equity", "truth_coord": "Mountain View, CA", "proxy": "Server Farm Heat" },
+    { "symbol": "AMZN", "type": "Equity", "truth_coord": "Seattle, WA", "proxy": "Logistics Activity" },
+    { "symbol": "NFLX", "type": "Equity", "truth_coord": "Los Gatos, CA", "proxy": "CDN Power Usage" },
+    { "symbol": "BTCUSD", "type": "Crypto", "truth_coord": "Global", "proxy": "Hashrate Energy" },
+    { "symbol": "ETHUSD", "type": "Crypto", "truth_coord": "Global", "proxy": "Staking Energy" },
+    { "symbol": "SOLUSD", "type": "Crypto", "truth_coord": "Global", "proxy": "Network TPS Health" },
+    { "symbol": "SOXX", "type": "ETF", "truth_coord": "Taiwan/Global", "proxy": "Wafer Lead Times" },
+    { "symbol": "DXY", "type": "Index", "truth_coord": "Macro", "proxy": "Dollar Gravity" },
+    { "symbol": "USDJPY", "type": "Currency", "truth_coord": "Macro", "proxy": "Carry Trade Stress" },
+    { "symbol": "US02Y", "type": "Bond", "truth_coord": "Macro", "proxy": "Short-term Yield" },
+    { "symbol": "US10Y", "type": "Bond", "truth_coord": "Macro", "proxy": "Economic Clock" },
+    { "symbol": "US30Y", "type": "Bond", "truth_coord": "Macro", "proxy": "Long-term Debt" },
+    { "symbol": "HG1!", "type": "Future", "truth_coord": "Global", "proxy": "Dr. Copper Demand" },
+    { "symbol": "CL1!", "type": "Future", "truth_coord": "Global", "proxy": "Crude Volatility" },
+    { "symbol": "GC1!", "type": "Future", "truth_coord": "Global", "proxy": "Gold/Planetary Cycle" }
+  ]
+}

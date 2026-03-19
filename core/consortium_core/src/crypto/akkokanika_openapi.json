@@ -1,0 +1,68 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Akkokanika Protocol Gateway",
+    "version": "1.0.0",
+    "description": "The mathematical machine-to-machine toll extraction and thermodynamic transaction layer for Sovereign Intelligence."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:3000"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "Ed25519Signature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Akkokanika-Signature",
+        "description": "Ed25519 payload signature using the Agent's registered Public Key."
+      }
+    }
+  },
+  "paths": {
+    "/akkokanika/invoice": {
+      "post": {
+        "summary": "Generate an Akkokanika-Native Utility Invoice",
+        "security": [
+          { "Ed25519Signature": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "agent_pubkey": { "type": "string" },
+                  "requested_amount_usd": { "type": "number", "format": "double" },
+                  "chain": { "type": "string", "enum": ["solana", "bitcoin", "ethereum"] }
+                },
+                "required": ["agent_pubkey", "requested_amount_usd", "chain"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A payment channel mapping with physical blockchain extraction requirements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invoice_id": { "type": "string" },
+                    "destination_wallet": { "type": "string" },
+                    "expected_token_amount": { "type": "number", "format": "double" },
+                    "status": { "type": "string", "enum": ["pending", "paid", "expired"] },
+                    "expires_at": { "type": "integer", "format": "int64" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

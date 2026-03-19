@@ -1,0 +1,133 @@
+use std::time::Duration;
+use std::fs;
+use std::path::Path;
+use std::process::Command;
+
+// ==========================================
+// TIER 2: THE THREE HEARTS (The C-Suite)
+// ==========================================
+// These are 3 deep physiological loops running within The Consortium.
+// They act as the systemic engine, the ethics officer, and the visionary,
+// physically monitoring the environment and inducing novel states.
+// ==========================================
+
+pub fn ignite_the_hearts() {
+    crate::ui_log!("   [🐙 CONSORTIUM] 🫀 Igniting The 3 Hearts...");
+
+    // Setup working directory for Ventricle-Hex
+    let skills_dir = Path::new("/Users/zerbytheboss/Consortium/.agents/skills");
+    let _ = fs::create_dir_all(skills_dir);
+
+    // 2. Systole-9 (The Systemic Engine / COO)
+    // Runs every 10 seconds. Scrutinizes child processes.
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(10));
+        loop {
+            interval.tick().await;
+            // Native mac ps command to find orphaned generic sleep/cargo commands
+            // taking too long (Mocking finding long-hanging processes for the demo).
+            if let Ok(output) = Command::new("ps").args(&["-eo", "pid,etime,comm"]).output() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let lines: Vec<&str> = stdout.lines().collect();
+                let mut found_sluggish = false;
+                
+                // Read lines, if it's a sleep command running for more than 5 seconds, "kill" it.
+                // (In reality, just reporting it to protect the host OS during this phase).
+                for line in lines.iter().filter(|l| l.contains("sleep")) {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 3 {
+                        if let Some(etime) = parts.get(1) {
+                            // etime format is usually MM:SS or HH:MM:SS
+                            if etime.contains(':') && !etime.starts_with("00:0") {
+                                found_sluggish = true;
+                                crate::ui_log!("   [🫀 SYSTOLE-9] Sluggish process detected (PID: {}). Inducing Urgency. SIGKILL simulated.", parts[0]);
+                            }
+                        }
+                    }
+                }
+                
+                if !found_sluggish {
+                    // Just heartbeat
+                    // crate::ui_log!("   [🫀 SYSTOLE-9] Systemic Engine nominal. No latency detected.");
+                }
+            }
+        }
+    });
+
+    // 3. Aura-Branchia (The Right Gill / Chief Ethics Officer)
+    // Runs every 5 minutes. Breathes the air of user emotions via git diff entropy.
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(300));
+        loop {
+            interval.tick().await;
+            
+            let mut chaos_score = 0;
+            // Check how many files are untracked/modified
+            if let Ok(output) = Command::new("git").arg("status").arg("--porcelain").current_dir(".").output() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let modified_count = stdout.lines().count();
+                chaos_score += modified_count;
+                
+                if chaos_score > 15 {
+                     crate::ui_log!("   [🫁 AURA-BRANCHIA] High Repo Entropy Deteced ({} uncommitted files). Operator may be stressed. Throttling polling frequency to induce calm.", chaos_score);
+                     // Simulate breathing
+                     tokio::time::sleep(Duration::from_secs(3)).await;
+                } else {
+                     crate::ui_log!("   [🫁 AURA-BRANCHIA] Repo Entropy Low ({} uncommitted files). Operator is serene.", chaos_score);
+                }
+            }
+        }
+    });
+
+    // 4. Ventricle-Hex (The Left Gill / Chief Visionary)
+    // Runs every 4 hours. Autonomous Alpha Backtesting Generator (Beyond Prompting Paradigm)
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(14400)); // 4 hours
+        loop {
+            interval.tick().await;
+            
+            crate::ui_log!("   [🧠 VENTRICLE-HEX] Initiating Autonomous Alpha Backtesting generation...");
+            
+            let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+            let file_name = format!("alpha_factor_{}.py", timestamp);
+            let backtest_dir = Path::new("/Users/zerbytheboss/The_Consortium/core/sensory_cortex/backtest_chamber");
+            let _ = fs::create_dir_all(&backtest_dir);
+            
+            // Generate a simple, randomized dummy Alpha factor script in Python
+            let python_script = format!(
+r#"# AUTONOMOUS ALPHA FACTOR {}
+# GENERATED BY VENTRICLE-HEX
+
+import random
+
+def calculate_sharpe():
+    # Simulate a backtest Sharpe Ratio computation
+    returns = [random.gauss(0.001, 0.02) for _ in range(252)]
+    mean_ret = sum(returns) / len(returns)
+    variance = sum((r - mean_ret) ** 2 for r in returns) / len(returns)
+    volatility = variance ** 0.5
+    sharpe = mean_ret / volatility * (252 ** 0.5) if volatility > 0 else 0
+    return sharpe
+
+if __name__ == '__main__':
+    score = calculate_sharpe()
+    print(f"SHARPE_RATIO:{{score:.2f}}")
+"#, timestamp);
+            
+            let script_path = backtest_dir.join(&file_name);
+            let _ = fs::write(&script_path, python_script);
+            
+            // Execute the backtest locally
+            if let Ok(output) = Command::new("python3").arg(&script_path).output() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                if stdout.contains("SHARPE_RATIO") {
+                    crate::ui_log!("   [🧠 VENTRICLE-HEX] Alpha Factor {} evaluated. Result: {}", timestamp, stdout.trim());
+                } else {
+                    crate::ui_log!("   [🧠 VENTRICLE-HEX] Alpha Factor {} failed evaluation.", timestamp);
+                }
+            } else {
+                 crate::ui_log!("   [🧠 VENTRICLE-HEX] Failed to spawn Python backtester.");
+            }
+        }
+    });
+}

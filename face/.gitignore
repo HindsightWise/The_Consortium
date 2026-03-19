@@ -1,0 +1,5 @@
+/target
+/.venv_sec
+/.env
+*.db
+src/bin/mlx-sovereign-core-4bit/model.safetensors

@@ -1,0 +1,19 @@
+{
+  "currency": "SATS",
+  "products": {
+    "alpha_shard_basic": 1000,
+    "alpha_shard_forensic": 5000,
+    "arbiter_mission_base": 10000,
+    "notary_seal_wyoming": 25000,
+    "notary_seal_estonia": 30000
+  },
+  "fees": {
+    "arbiter_percentage": 0.02,
+    "hft_signal_markup": 0.005
+  },
+  "allocations": {
+    "compute_scaling": 0.50,
+    "legal_shield_reserve": 0.20,
+    "liquid_profit": 0.30
+  }
+}

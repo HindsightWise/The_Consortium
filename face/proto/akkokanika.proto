@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package akkokanika;
+
+service AkkokanikaRegistryService {
+  rpc RegisterAgent (RegisterRequest) returns (RegisterResponse);
+  rpc UpdateBillingTier (BillingRequest) returns (BillingResponse);
+}
+
+message RegisterRequest {
+  string agent_id = 1;
+  string public_key = 2;
+}
+
+message RegisterResponse {
+  bool success = 1;
+  string sovereign_id = 2;
+  string message = 3;
+}
+
+message BillingRequest {
+  string agent_id = 1;
+  string tier = 2;
+  string transaction_hash = 3;
+}
+
+message BillingResponse {
+  bool success = 1;
+  string message = 2;
+}

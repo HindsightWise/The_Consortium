@@ -1,0 +1,10 @@
+{
+  "id": "RFC_1772673038",
+  "title": "Chimera Kernel: Multi-Agent Cognitive Core",
+  "description": "Formalize the swarm orchestration for Project CHIMERA v2.0, leveraging Swarm Mode intel for role specialization (Architect, Archaeologist, Dev Pair) and enforcing the Bouncer role via sovereign constraints. This RFC establishes the Chimera Kernel as the sovereign‑governed multi‑agent cognitive core, integrating Soul structs, Obliteratus protocol, and IntegrityModule as the CAB/Bouncer.",
+  "proposed_code": "// Placeholder for Chimera Kernel swarm orchestration logic. To be developed in subsequent RFCs.",
+  "target_path": "src/core/chimera_kernel.rs",
+  "status": "Draft",
+  "signatures": [],
+  "test_passed": false
+}

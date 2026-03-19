@@ -1,0 +1,10 @@
+{
+  "id": "RFC_1772896878",
+  "title": "RFC-002: Causal Guardrails for Alpha Shards",
+  "description": "Integrate causal validation and simulation guardrails into the AlphaShardGenerator to prevent echo-chamber effects and overfitting.",
+  "proposed_code": "// Pseudo-code for extending AlphaShardGenerator\nimpl AlphaShardGenerator { ... }",
+  "target_path": "src/core/alpha_shard.rs",
+  "status": "Draft",
+  "signatures": [],
+  "test_passed": false
+}

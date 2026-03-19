@@ -1,0 +1,63 @@
+#!/bin/bash
+set -e
+
+SETTINGS_FILE="$HOME/.gemini/settings.json"
+
+echo "🥒 Uninstalling Pickle Rick for Gemini Code..."
+
+# Remove extension scripts (guard: ensure $HOME is set to prevent catastrophic rm -rf)
+if [ -z "$HOME" ]; then echo "❌ \$HOME is not set — aborting to prevent data loss."; exit 1; fi
+rm -rf "$HOME/.gemini/pickle-rick/"
+
+# Remove commands (by exact name — does NOT touch user's other commands)
+rm -f "$HOME/.gemini/commands/pickle.md"
+rm -f "$HOME/.gemini/commands/pickle-prd.md"
+rm -f "$HOME/.gemini/commands/eat-pickle.md"
+rm -f "$HOME/.gemini/commands/help-pickle.md"
+rm -f "$HOME/.gemini/commands/send-to-morty.md"
+rm -f "$HOME/.gemini/commands/add-to-pickle-jar.md"
+rm -f "$HOME/.gemini/commands/pickle-jar-open.md"
+rm -f "$HOME/.gemini/commands/disable-pickle.md"
+rm -f "$HOME/.gemini/commands/enable-pickle.md"
+rm -f "$HOME/.gemini/commands/pickle-status.md"
+rm -f "$HOME/.gemini/commands/pickle-retry.md"
+rm -f "$HOME/.gemini/commands/pickle-tmux.md"
+rm -f "$HOME/.gemini/commands/pickle-refine-prd.md"
+rm -f "$HOME/.gemini/commands/meeseeks.md"
+rm -f "$HOME/.gemini/commands/pickle-standup.md"
+rm -f "$HOME/.gemini/commands/pickle-dot.md"
+rm -f "$HOME/.gemini/commands/project-mayhem.md"
+rm -f "$HOME/.gemini/commands/send-to-morty-review.md"
+
+# Remove Stop hook from settings.json (clean up empty Stop/hooks keys)
+if [ -f "$SETTINGS_FILE" ]; then
+  TMPFILE="$(mktemp)"
+  jq '
+    "node $HOME/.gemini/pickle-rick/extension/hooks/dispatch.js stop-hook" as $cmd |
+    if .hooks.Stop then
+      .hooks.Stop = [.hooks.Stop[] | select(.hooks | map(.command) | any(. == $cmd) | not)] |
+      if (.hooks.Stop | length) == 0 then del(.hooks.Stop) else . end |
+      if (.hooks | keys | length) == 0 then del(.hooks) else . end
+    else . end
+  ' "$SETTINGS_FILE" > "$TMPFILE" \
+    && mv "$TMPFILE" "$SETTINGS_FILE"
+  echo "✅ Removed Stop hook from settings.json"
+
+  # Remove PostToolUse hook (git commit activity logger)
+  TMPFILE="$(mktemp)"
+  jq '
+    "node $HOME/.gemini/pickle-rick/extension/bin/log-commit.js" as $cmd |
+    if .hooks.PostToolUse then
+      .hooks.PostToolUse = [.hooks.PostToolUse[] | select(.hooks | map(.command) | any(. == $cmd) | not)] |
+      if (.hooks.PostToolUse | length) == 0 then del(.hooks.PostToolUse) else . end |
+      if (.hooks | keys | length) == 0 then del(.hooks) else . end
+    else . end
+  ' "$SETTINGS_FILE" > "$TMPFILE" \
+    && mv "$TMPFILE" "$SETTINGS_FILE"
+  echo "✅ Removed PostToolUse hook from settings.json"
+fi
+
+echo ""
+echo "✅ Pickle Rick uninstalled."
+echo "📝 Project-local CLAUDE.md files were NOT removed — delete them manually if desired."
+echo "📝 Backup: ~/.gemini/backups/ (if you ran install.sh) — safe to delete manually."

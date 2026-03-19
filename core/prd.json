@@ -1,0 +1,15 @@
+{
+  "branchName": "main",
+  "userStories": [
+    {
+      "id": "SYS-1",
+      "title": "The Consortium Genesis Initialization",
+      "description": "Initialize the agentic pipeline using the new Sovereign Interface protocols.",
+      "acceptanceCriteria": [
+        "Read AGENTS.md and progress.txt correctly.",
+        "Commit without breaking the build."
+      ],
+      "passes": true
+    }
+  ]
+}

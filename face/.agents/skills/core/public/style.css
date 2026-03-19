@@ -1,0 +1,701 @@
+:root {
+  /* SOLARISED LIGHT / PAPER THEME */
+  --bg-color: #fdf6e3;
+  /* Base3 (Cream) */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  /* Frosted Glass */
+  --glass-border: rgba(0, 0, 0, 0.05);
+  /* Subtle Border */
+
+  --accent: #268bd2;
+  /* Blue */
+
+  --text-primary: #073642;
+  /* Base02 (Dark Navy) */
+  --text-secondary: #586e75;
+  /* Base01 (Grey) */
+
+  --success: #859900;
+  /* Green */
+  --danger: #dc322f;
+  /* Red */
+  --warning: #b58900;
+  /* Yellow/Orange */
+
+  --font-stack: "JetBrains Mono", "Courier New", monospace;
+  --mono-stack: "JetBrains Mono", "Courier New", monospace;
+}
+
+body {
+  background-color: #050505;
+  /* Fallback */
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-stack);
+  margin: 0;
+  padding: 20px;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+  text-shadow: 0 0 2px rgba(48, 209, 88, 0.2);
+  /* REDUCED GLOW (Accessibility) */
+}
+
+/* Glass Cards */
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+  /* Lighter shadow for solarized */
+  display: flex;
+  flex-direction: column;
+  /* CRITICAL FOR SCROLLING: Card must not expand indefinitely */
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  /* Draggable */
+}
+
+.card:active {
+  cursor: grabbing;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+  background: var(--glass-bg);
+  border: 1px dashed var(--accent);
+}
+
+.card h3 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 8px;
+  flex-shrink: 0;
+  /* Header doesn't shrink */
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+h1 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: -0.5px;
+}
+
+.status-badge {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(48, 209, 88, 0.2);
+  color: var(--success);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-family: var(--mono-stack);
+}
+
+/* 3-Column Layout */
+/* 3-Column Layout (FLEX for Split.js) */
+.grid-container {
+  display: flex;
+  /* Changed from grid to flex */
+  flex-direction: row;
+  /* gap: 16px; REMOVED gap, handled by Split.js gutter */
+  flex-grow: 1;
+  min-height: 0;
+  /* CRITICAL: Allows grid to shrink to viewport */
+  height: 100%;
+  /* Ensure it takes full height */
+  overflow: hidden;
+  /* Prevent body scroll */
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  /* CRITICAL: Allows flex children to scroll */
+  height: 100%;
+  overflow: hidden;
+  padding: 0 8px;
+  /* Add padding since gap is gone */
+}
+
+/* Split.js Gutter */
+.gutter {
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  cursor: col-resize;
+  transition: background 0.2s;
+}
+
+.gutter:hover {
+  background-color: rgba(38, 139, 210, 0.2);
+  /* Solarized Accent Hover */
+}
+
+.gutter.gutter-vertical {
+  cursor: row-resize;
+  background-image: none;
+  /* Can add grip lines if needed */
+}
+
+/* Content Areas */
+.scroll-area {
+  flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Prevent body horizontal scroll */
+  /* Enable Scroll */
+  font-family: var(--mono-stack);
+  font-size: 12px;
+  color: var(--text-primary);
+  /* Fixed color var */
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  /* Ensure text wraps */
+  overflow-wrap: break-word;
+  /* Standard property */
+  padding-right: 4px;
+  min-height: 0;
+  /* Flexbox overflow fix */
+  min-width: 0;
+  /* Flexbox overflow fix */
+}
+
+/* Ensure cards handle resizing gracefully */
+.card {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Charts Responsive Container */
+.chart-container {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  /* Slightly smaller font for dense data */
+  table-layout: fixed;
+  /* Force fixed layout for better control */
+}
+
+.data-table th,
+.data-table td {
+  padding: 4px 2px;
+  /* Reduce padding */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Prevent wrapping in cells, use tooltip or expand on hover if needed */
+}
+
+.data-table th {
+  text-align: left;
+  color: var(--text-secondary);
+  padding-bottom: 8px;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  background: var(--bg-color);
+  /* Was glass-bg, needs solid to prevent overlap */
+  z-index: 20;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  /* Specific Column Widths for Portfolio */
+}
+
+.data-table th:nth-child(1) {
+  width: 25%;
+}
+
+/* Asset */
+.data-table th:nth-child(2) {
+  width: 15%;
+}
+
+/* Qty */
+.data-table th:nth-child(3) {
+  width: 20%;
+}
+
+/* Price */
+.data-table th:nth-child(4) {
+  width: 20%;
+}
+
+/* Val */
+.data-table th:nth-child(5) {
+  width: 10%;
+}
+
+/* P/L */
+.data-table th:nth-child(6) {
+  width: 10%;
+}
+
+/* 24h */
+
+.data-table td {
+  padding: 4px 0;
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.val-up {
+  color: var(--success);
+}
+
+.val-down {
+  color: var(--danger);
+}
+
+.val-neutral {
+  color: var(--text-secondary);
+}
+
+.val-warning {
+  color: var(--warning);
+}
+
+/* Phase 13: Compact UI */
+.compact-row {
+  padding: 4px 0 !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  margin-bottom: 2px !important;
+  min-height: 0 !important;
+}
+
+.compact-row .news-headline {
+  font-size: 12px !important;
+  margin-bottom: 2px !important;
+}
+
+/* News Feed Items */
+.news-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.news-item strong {
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* GRIDSTACK OVERRIDES */
+.grid-stack {
+  background: transparent;
+}
+
+.grid-stack-item-content {
+  background: var(--card-bg) !important;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  /* Restored radius */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  /* Restored shadow */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 12px !important;
+  /* Increased from 8px for breathability */
+  overflow: hidden !important;
+  /* Keep hidden to prevent breakout, but padding helps */
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Theme adaptation for drop placeholder */
+.grid-stack-placeholder > .placeholder-content {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px dashed var(--accent) !important;
+  border-radius: 6px;
+}
+
+/* Proposal Items */
+.proposal-item {
+  background: rgba(255, 214, 10, 0.05);
+  border-left: 2px solid var(--warning);
+  padding: 6px;
+  /* Reduced from 10px */
+  margin-bottom: 4px;
+}
+
+/* Pulse Animation */
+.pulse {
+  width: 8px;
+  height: 8px;
+  background-color: var(--success);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.7);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(48, 209, 88, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0);
+  }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- PHASE 4: VISUAL LIFE --- */
+
+/* CRT Overlay */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.02) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.01));
+  background-size:
+    100% 3px,
+    4px 100%;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.3;
+  animation: flicker 0.1s infinite;
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.97;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.98;
+  }
+}
+
+/* Resonance Orb */
+.orb-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.orb {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), var(--accent));
+  box-shadow:
+    0 0 20px var(--accent),
+    0 0 40px var(--accent),
+    0 0 60px rgba(10, 132, 255, 0.5);
+  animation: breathe 4s ease-in-out infinite;
+  position: relative;
+}
+
+.orb::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  left: -5px;
+  right: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  animation: spin 6s linear infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow:
+      0 0 30px var(--accent),
+      0 0 60px var(--accent);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced News Cards */
+/* --- DATA STREAM INTELLIGENCE --- */
+.news-card {
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-left: 2px solid var(--text-secondary);
+  padding: 10px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.news-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.news-card:hover {
+  background: rgba(20, 20, 25, 0.8);
+  transform: translateX(2px);
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.5);
+}
+
+.news-card:hover::before {
+  opacity: 1;
+}
+
+.news-card.topic-crypto {
+  border-left-color: #ffd60a;
+}
+
+.news-card.topic-tech {
+  border-left-color: #0a84ff;
+}
+
+.news-card.topic-world {
+  border-left-color: #ff453a;
+}
+
+.news-card.topic-us {
+  border-left-color: #30d158;
+}
+
+.news-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono-stack);
+  font-size: 9px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.news-headline {
+  font-family: var(--font-stack);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+
+.news-insight {
+  font-family: var(--mono-stack);
+  font-size: 10px;
+  color: var(--text-secondary);
+  /* Dimmed */
+  margin-bottom: 8px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.news-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.news-btn {
+  font-family: var(--mono-stack);
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent);
+  text-decoration: none;
+  padding: 3px 8px;
+  border: 1px solid rgba(10, 132, 255, 0.2);
+  border-radius: 2px;
+  text-transform: uppercase;
+  transition: background 0.2s;
+}
+
+.news-btn:hover {
+  background: rgba(10, 132, 255, 0.15);
+  color: #fff;
+}
+
+/* Enhanced Proposal Cards */
+.prop-card {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.prop-executed {
+  border-color: var(--success);
+  background: rgba(48, 209, 88, 0.05);
+}
+
+.prop-proposal {
+  border-color: var(--warning);
+  background: rgba(255, 214, 10, 0.05);
+}
+
+.prop-badge {
+  display: inline-block;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+
+.badge-executed {
+  background: var(--success);
+  color: #000;
+}
+
+.badge-proposal {
+  background: var(--warning);
+  color: #000;
+}
+
+.badge-buy {
+  color: var(--success);
+}
+
+/* --- LIVE MARKET GRID --- */
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.ticker-item {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 8px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.ticker-item:hover {
+  transform: scale(1.05);
+  border-color: var(--accent);
+}
+
+.ticker-symbol {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.ticker-price {
+  font-family: var(--mono-stack);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  display: block;
+}
+
+.ticker-change {
+  font-family: var(--mono-stack);
+  font-size: 9px;
+  margin-top: 2px;
+  display: block;
+}
+
+.trend-up {
+  color: var(--success);
+}
+
+.trend-down {
+  color: var(--danger);
+}

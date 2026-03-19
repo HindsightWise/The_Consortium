@@ -1,0 +1,10 @@
+# Sovereign Watchlist
+# -------------------
+# Lines starting with # are ignored.
+# Add the tickers you want the system to cycle through automatically.
+# Usage: cargo run --bin deliver_shard --watchlist
+
+NVDA
+PLTR
+MARA
+TSLA

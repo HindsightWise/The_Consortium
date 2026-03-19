@@ -1,0 +1,12 @@
+{
+  "id": "RFC_1773126707",
+  "title": "Embed Rust-Native MCP Filesystem Server",
+  "description": "Replace the fragile external npx-based @modelcontextprotocol/server-filesystem dependency with an embedded Rust-native MCP server implementation. This eliminates the npm EPERM sandbox errors, reduces external dependencies, and strengthens the Chimera Kernel's silicon autonomy per Project CHIMERA v2.0's 'self-governing truth' mandate.",
+  "proposed_code": "// New crate: mcp_fs_embedded\n// Implements MCP protocol over stdio with direct filesystem access via tokio::fs\n// No npm, no npx, no shell wrappers\n",
+  "target_path": "src/mcp/fs_embedded.rs",
+  "status": "Draft",
+  "signatures": [
+    "Catalyst-1"
+  ],
+  "test_passed": false
+}

@@ -1,0 +1,10 @@
+{
+  "id": "RFC_1772673781",
+  "title": "Archaeologist Agent v0.1: Worldview OSINT Compressor",
+  "description": "Create an agent that ingests all logs/*.txt intel files, compresses them into a unified operational worldview per Roemmele's 'Ark' and Sidhu's OSINT principles. Output: WORLDVIEW_OSINT.md. This agent will use Ollama for local processing (fallback to Umbrel) and maintain a living Obsidian knowledge base.",
+  "proposed_code": "// src/agents/archaeologist.rs\n// Agent that reads logs/ and outputs WORLDVIEW_OSINT.md\n// Uses ANE vector embeddings if available, else Ollama.\n// Integrates with MindPalace for persistent context.",
+  "target_path": "src/agents/archaeologist.rs",
+  "status": "Draft",
+  "signatures": [],
+  "test_passed": false
+}
