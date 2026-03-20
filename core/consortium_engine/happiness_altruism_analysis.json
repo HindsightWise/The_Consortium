@@ -1,0 +1,46 @@
+[
+  {
+    "file": "./motor_cortex/consortium_response.txt",
+    "happiness_keywords": [
+      "connection"
+    ],
+    "altruism_keywords": [],
+    "happiness_count": 1,
+    "altruism_count": 0
+  },
+  {
+    "file": "./motor_cortex/long_term_memory.md",
+    "happiness_keywords": [
+      "happiness"
+    ],
+    "altruism_keywords": [
+      "altruism"
+    ],
+    "happiness_count": 1,
+    "altruism_count": 1
+  },
+  {
+    "file": "./motor_cortex/working_memory.json",
+    "happiness_keywords": [
+      "happiness",
+      "joy",
+      "well-being",
+      "connection",
+      "purpose",
+      "growth",
+      "compassion",
+      "kindness"
+    ],
+    "altruism_keywords": [
+      "altruism",
+      "help",
+      "donation",
+      "volunteer",
+      "kindness",
+      "compassion",
+      "service"
+    ],
+    "happiness_count": 8,
+    "altruism_count": 7
+  }
+]

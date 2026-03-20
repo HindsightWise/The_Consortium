@@ -31,6 +31,8 @@ impl McpClient {
 
         let mut cmd = Command::new("cargo");
         cmd.arg("run")
+           .arg("-p")
+           .arg("consortium_mcp")
            .arg("--bin")
            .arg(server_bin)
            // Run it from the core directory so cargo works correctly

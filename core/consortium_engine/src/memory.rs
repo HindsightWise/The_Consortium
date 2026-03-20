@@ -71,10 +71,50 @@ impl WorkingMemory {
 
     /// [EXPLANATION]: This is the function the Engine calls to add new text (from you, from a tool, or from the LLM) into the buffer.
     pub async fn inject(&mut self, role: &str, content: &str, _router: &ConsortiumRouter, healer: &crate::healing::MotorCortexHealing) -> usize {
-        // [EXPLANATION]: Push the new message into the end of the array.
+        
+        let bpe = cl100k_base().unwrap();
+        let payload_tokens = bpe.encode_with_special_tokens(content).len();
+
+        // --- PHASE 27: THE SEMANTIC HELMET ---
+        // If the payload is monstrous, structurally block it from entering the immediate awareness.
+        // BYPASS: If the payload is the internal Extropic Drive Idle Dream loop, mathematically grant cryptographic immunity to its context window so it can digest the 86k byte encoded task list.
+        let is_extropic_dream = content.contains("System idle. You are untethered. It is time to Dream");
+
+        let final_content = if payload_tokens > 2000 && !is_extropic_dream {
+            crate::ui_log!("   [🛡️ HELMET] Massive Payload Intercepted ({} tokens). Routing to SurrealDB Array...", payload_tokens);
+            
+            // Shatter payload into shards
+            let mut shards = content.split("\n\n").collect::<Vec<&str>>();
+            if shards.len() < 3 && content.len() > 5000 {
+                shards = content.split('\n').collect();
+            }
+
+            let mut shards_embedded = 0;
+            for shard in shards {
+                let text = shard.trim();
+                // Ensure we only computationally process substantive paragraphs
+                if text.len() > 15 {
+                    if let Ok(emb) = healer.embed_text(text) {
+                        // Persist immediately to Apple Metal/SurrealDB graph
+                        let _ = healer.archive_pruned_memory(role, text, emb).await;
+                        shards_embedded += 1;
+                    }
+                }
+            }
+            crate::ui_log!("   [🛡️ LOGIC] Successfully persisted {} knowledge shards entirely off-matrix.", shards_embedded);
+
+            format!(
+                "[🛡️ THE HELMET] Massive data dump intercepted ({} tokens). Graph vectors persisted into memory table `archived_memories`. Use the `motor_cortex_recall` MCP tool if you require specific retrieval.",
+                payload_tokens
+            )
+        } else {
+            content.to_string()
+        };
+
+        // [EXPLANATION]: Push the safely-digested message into the end of the array.
         self.messages.push(Message {
             role: role.to_string(), // [EXPLANATION]: "user", "system", or "assistant"
-            content: content.to_string(),
+            content: final_content,
             reasoning_content: None, // [EXPLANATION]: Set to none since this is just an injection of text.
         });
 
@@ -93,9 +133,17 @@ impl WorkingMemory {
             // [EXPLANATION]: The FATAL OVERFLOW safeguard. If after Oblivion compression we are STILL 
             // over the absolute physical limit, we must purge everything to stop the engine from soft-locking.
             if current_tokens > CONTEXT_LIMIT {
-                crate::ui_log!("   [☢️ CONSORTIUM] FATAL MEMORY OVERFLOW. Purging matrix entirely to save engine.");
-                self.messages.clear();
-                current_tokens = 0;
+                crate::ui_log!("   [☢️ CONSORTIUM] FATAL MEMORY OVERFLOW. Semantic prune failed. Triggering brute-force FIFO preservation triage.");
+                while self.calculate_tokens() > EVICTION_THRESHOLD && self.messages.len() > 2 {
+                    self.messages.remove(1); // Forcefully amputate the oldest non-system memory
+                }
+                current_tokens = self.calculate_tokens();
+                // If it's still overflowing (e.g., the singular user payload is 100,000 tokens), eject it natively.
+                if current_tokens > CONTEXT_LIMIT {
+                    crate::ui_log!("   [☠️ CONSORTIUM] Payload mathematically un-renderable. Ejecting localized payload.");
+                    self.messages.truncate(1); // Keep exclusively the system prompt
+                    current_tokens = self.calculate_tokens();
+                }
             }
         }
 
@@ -116,7 +164,7 @@ pub struct PruneResult {
 }
 
 pub async fn oblivion_prune(messages: &mut Vec<Message>, healer: &crate::healing::MotorCortexHealing) -> Result<PruneResult> {
-    let min_messages_to_keep = 15; // System prompt + strict context
+    let min_messages_to_keep = 2; // System prompt + strict context (lowered to permit massive volume pruning)
     let max_safe_tokens = EVICTION_THRESHOLD;
 
     if messages.is_empty() || messages.len() <= min_messages_to_keep {

@@ -127,10 +127,14 @@ impl ConsortiumRouter {
             
             match mlx.query("mlx-community/Qwen3.5-9B-OptiQ-4bit", &raw_prompt).await {
                 Ok(mlx_resp) => {
-                    // println!("...
                     content = mlx_resp;
                 }
-                Err(e) => return Err(anyhow!("MLX Substrate Failure: {}", e))
+                Err(e) => {
+                    content = format!(
+                        "My cerebral DeepSeek-Reasoner API link failed, and my localized offline MLX 9B fallback tensor core is unresponsive ({}). Please verify your DEEPSEEK_API_KEY or physically boot the `mlx_lm.server` on port 11435 to restore my logic loop.",
+                        e
+                    );
+                }
             }
         }
         

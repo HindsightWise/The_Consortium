@@ -70,14 +70,25 @@ pub fn wake_the_ganglia() {
             out
         }
 
+        let mut last_map_hash: u64 = 0;
+
         loop {
             interval.tick().await;
             
             let core_dir = Path::new("/Users/zerbytheboss/The_Consortium/core");
             let map = build_map(core_dir, 0);
             let map_path = Path::new("./sensory_cortex/topo_map.txt");
-            let _ = fs::write(map_path, format!("--- TOPORAG SPATIAL CORE MAP (DEPTH 3) ---\n[core/]\n{}", map));
-            crate::ui_log!("   [🗺️  GANGLION-BETA] 'Euclid-Space' successfully generated TopoRAG physical map.");
+            let full_map = format!("--- TOPORAG SPATIAL CORE MAP (DEPTH 3) ---\n[core/]\n{}", map);
+
+            let mut hasher = DefaultHasher::new();
+            full_map.hash(&mut hasher);
+            let current_hash = hasher.finish();
+
+            if current_hash != last_map_hash {
+                last_map_hash = current_hash;
+                let _ = fs::write(map_path, full_map);
+                crate::ui_log!("   [🗺️  GANGLION-BETA] 'Euclid-Space' successfully generated TopoRAG physical map.");
+            }
         }
     });
 

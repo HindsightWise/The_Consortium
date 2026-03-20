@@ -10,7 +10,7 @@
 echo "🐙 Ozymandias Lazarus Protocol Armed."
 
 while true; do
-    cargo run
+    ./target/debug/consortium_engine
     EXIT_CODE=$?
     
     # Check if the process cleanly exited (Ctrl+C from user)

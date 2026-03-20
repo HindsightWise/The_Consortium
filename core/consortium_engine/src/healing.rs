@@ -20,7 +20,7 @@ pub struct MotorCortexHealing {
 
 impl MotorCortexHealing {
     pub async fn new(db: Surreal<Db>) -> Result<Self> {
-        let device = Device::new_metal(0).unwrap_or(Device::Cpu);
+        let device = Device::Cpu;
 
         crate::ui_log!("   [🧬 MOTOR CORTEX] Downloading BAAI/bge-base-en-v1.5 Embeddings from HuggingFace Hub...");
 
@@ -105,11 +105,17 @@ impl MotorCortexHealing {
             .encode(prefixed, true)
             .map_err(|e| anyhow::anyhow!("Encoding failed: {}", e))?;
 
-        let input_ids = encoding.get_ids();
-        let attention_mask = encoding.get_attention_mask();
+        let mut input_ids = encoding.get_ids().to_vec();
+        let mut attention_mask = encoding.get_attention_mask().to_vec();
 
-        let input_tensor = Tensor::new(input_ids, &self.device)?.unsqueeze(0)?;
-        let mask_tensor = Tensor::new(attention_mask, &self.device)?.unsqueeze(0)?.to_dtype(DType::F32)?;
+        // Enforce maximum structural bounds to prevent candle-core Positional Embedding unwinding panics on massive contextual anchors
+        if input_ids.len() > 512 {
+            input_ids.truncate(512);
+            attention_mask.truncate(512);
+        }
+
+        let input_tensor = Tensor::new(input_ids.as_slice(), &self.device)?.unsqueeze(0)?;
+        let mask_tensor = Tensor::new(attention_mask.as_slice(), &self.device)?.unsqueeze(0)?.to_dtype(DType::F32)?;
 
         let hidden_states = self.model.forward(&input_tensor, &mask_tensor, None)?;
 
@@ -161,7 +167,7 @@ impl MotorCortexHealing {
 
     /// Surgically writes pruned contextual memories (from Oblivion Protocol) into permanent long-term graphical storage
     pub async fn archive_pruned_memory(&self, role: &str, content: &str, embedding: Vec<f32>) -> Result<()> {
-        let _ = self.db.query(r#"
+        let result: surrealdb::Response = self.db.query(r#"
             CREATE archived_memories SET
                 role = $role,
                 content = $content,
@@ -172,6 +178,38 @@ impl MotorCortexHealing {
         .bind(("content", content))
         .bind(("embedding", embedding))
         .await?;
+        
+        let _ = result.check()?;
         Ok(())
+    }
+
+    /// Surgically extracts the closest contextual shards from the long-term temporal graph over BAAI topologies.
+    pub async fn query_deep_memory(&self, query_text: &str) -> Result<String> {
+        let embedding = self.embed_text(query_text)?;
+        
+        // Execute Cosine query against 'archived_memories' limits to Top 5 nearest neighbors
+        let mut res = self.db.query(r#"
+            SELECT content, role, vector::distance::cosine(embedding, $embedding) AS distance 
+            FROM archived_memories 
+            WHERE embedding <|8, COSINE|> $embedding
+            ORDER BY distance ASC LIMIT 5
+        "#)
+        .bind(("embedding", embedding))
+        .await?;
+        
+        let records: Vec<serde_json::Value> = res.take(0)?;
+        
+        let mut results_str = String::new();
+        for (i, rec) in records.iter().enumerate() {
+            let content = rec.get("content").and_then(|v| v.as_str()).unwrap_or("");
+            let distance = rec.get("distance").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            results_str.push_str(&format!("Result [{}] (Semantic Distance: {:.3}):\n{}\n\n", i+1, distance, content));
+        }
+        
+        if results_str.is_empty() {
+            Ok("[⚠️ MOTOR CORTEX] Semantic search yielded absolute zero relative vectors (No memories found).".to_string())
+        } else {
+            Ok(results_str)
+        }
     }
 }

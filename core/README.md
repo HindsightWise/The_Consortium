@@ -55,15 +55,18 @@ To physically modify its executing memory without triggering macOS ASLR, SIP, or
 - **Architectural Latency Annihilation**: LLM text routing dynamically maps to an array of pre-compiled native `.wasm` binaries. Execution parameters are beamed straight into strictly isolated `wasmtime-wasi v42` sandboxes via native WASI injection (`builder.arg()`), entirely eliminating runtime `cargo compile` loops.
 - **Payload Hardening**: All Wasm payloads are mathematically bound by strict validation rules (≤ 512 KiB module limits) to seamlessly close prompt-DoS vectors and securely sandbox network requests.
 
-### 6. Context Compaction (OBLIVION Protocol)
+### 6. Context Compaction (Relevance-Aware Oblivion v2)
 
 To maintain a continuous cyber-physical biological loop, Consortium implements a true Working Memory rolling buffer bounded strictly by a 64,000 token limit.
+
 - **80% Eviction Trigger**: Mathematically tracked using `tiktoken-rs`. Once the neural context surpasses 80%, the daemon triggers a biological eviction cycle.
-- **Dense Sieve Extraction**: The oldest 95% of linguistic memory is compressed into a singular dense summary via an overarching system prompt, while the most recent 5% physical interaction vector is preserved completely intact to prevent immediate context degradation.
+- **Semantic Euclidean Pruning**: Instead of chronologically butchering the oldest memories, the Engine dynamically instantiates `BAAI/bge-base-en-v1.5` natively on the Apple Metal layer via `candle-core`. It concatenates the 5 most recent thoughts into a Context Anchor, computing the mathematical Euclidean Divergence (`1.0 - dot_product`) across all prior memory structures, and amputates only the most irrelevant orthogonal branches.
+- **Eternal Archival**: Amputated matrices are seamlessly transferred into the `SurrealDB` Temporal Graph prior to true RAM erasure.
 
 ### 7. Native Alpaca Stream (Sensory Cortex)
 
 Consortium operates a live `tokio-tungstenite` WebSocket stream running directly into the core `NervousEvent` bus.
+
 - **Biometric Market Reactivity**: Real-time ticker `Quote` and `Trade` structs from the Alpaca crypto endpoint are intrinsically mapped into biological impulses, potentially modulating `Entropy` and `Epistemic` Endocrine drives based on market velocity.
 - **Egui Cockpit Visualization**: Engine telemetry streams directly into a structured GUI rendered natively via `eframe/egui`, including immediate capital extraction flow logs.
 

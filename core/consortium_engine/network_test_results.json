@@ -1,0 +1,22 @@
+{
+  "arXiv": {
+    "status": "SUCCESS",
+    "status_code": 200
+  },
+  "Project Gutenberg": {
+    "status": "SUCCESS",
+    "status_code": 200
+  },
+  "CoinGecko API": {
+    "status": "SUCCESS",
+    "status_code": 200
+  },
+  "Physics.org": {
+    "status": "SUCCESS",
+    "status_code": 400
+  },
+  "ScienceDaily": {
+    "status": "SUCCESS",
+    "status_code": 200
+  }
+}

@@ -7,7 +7,7 @@ use ratatui::{
     Terminal,
 };
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event, KeyCode, MouseEvent, MouseEventKind, EnableMouseCapture, DisableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -31,6 +31,8 @@ pub struct TuiApp {
     lattice_integrity: f32,
     active_skills: usize,
     treasury: String,
+    log_scroll_offset: u16,
+    chat_scroll_offset: u16,
 }
 
 impl TuiApp {
@@ -47,6 +49,8 @@ impl TuiApp {
             lattice_integrity: 1.0,
             active_skills: 0,
             treasury: "0.00".to_string(),
+            log_scroll_offset: 0,
+            chat_scroll_offset: 0,
         }
     }
 
@@ -54,7 +58,7 @@ impl TuiApp {
         // Spin into crossterm alternate screen hijack mode
         enable_raw_mode()?;
         let mut stdout = stdout();
-        execute!(stdout, EnterAlternateScreen)?;
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
         let backend = CrosstermBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
         terminal.clear()?;
@@ -96,66 +100,92 @@ impl TuiApp {
             // Sync Draw frame
             terminal.draw(|f| self.ui(f))?;
 
-            // Capture keystrokes
+            // Capture keystrokes and mouse hardware input
             if event::poll(Duration::from_millis(50))? {
-                if let Event::Key(key) = event::read()? {
-                    match key.code {
-                        KeyCode::Char('c') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
-                            break;
-                        }
-                        KeyCode::Esc => {
-                            break;
-                        }
-                        KeyCode::Char(c) => {
-                            self.input.push(c);
-                        }
-                        KeyCode::Backspace => {
-                            self.input.pop();
-                        }
-                        KeyCode::Enter => {
-                            if !self.input.is_empty() {
-                                let input = self.input.clone();
-                                if input == "/commands" {
-                                    self.chat_logs.push("> ⚙️ System Commands:".to_string());
-                                    self.chat_logs.push("  /color <name>   (e.g. green, cyan, lightblue, white, yellow)".to_string());
-                                    self.chat_logs.push("  /clear          (Clears chat log)".to_string());
-                                } else if input == "/clear" {
-                                    self.chat_logs.clear();
-                                } else if input.starts_with("/color ") {
-                                    let color_name = input.trim_start_matches("/color ").trim().to_lowercase();
-                                    self.chat_color = match color_name.as_str() {
-                                        "green" => Color::Green,
-                                        "lightgreen" => Color::LightGreen,
-                                        "blue" => Color::Blue,
-                                        "lightblue" => Color::LightBlue,
-                                        "cyan" => Color::Cyan,
-                                        "lightcyan" => Color::LightCyan,
-                                        "magenta" => Color::Magenta,
-                                        "lightmagenta" => Color::LightMagenta,
-                                        "yellow" => Color::Yellow,
-                                        "lightyellow" => Color::LightYellow,
-                                        "white" => Color::White,
-                                        "red" => Color::Red,
-                                        "lightred" => Color::LightRed,
-                                        _ => self.chat_color,
-                                    };
-                                    self.chat_logs.push(format!("> ⚙️ System: Chat UI color changed to {}", color_name));
-                                } else {
-                                    self.chat_logs.push(format!("> 🙎‍♂️ You: {}", self.input));
-                                    let _ = self.user_tx.send(self.input.clone());
-                                }
-                                self.input.clear();
+                match event::read()? {
+                    Event::Key(key) => {
+                        match key.code {
+                            KeyCode::Char('c') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                                break;
                             }
+                            KeyCode::Esc => {
+                                break;
+                            }
+                            KeyCode::Char(c) => {
+                                self.input.push(c);
+                            }
+                            KeyCode::Backspace => {
+                                self.input.pop();
+                            }
+                            KeyCode::Enter => {
+                                if !self.input.is_empty() {
+                                    let input = self.input.clone();
+                                    if input == "/commands" {
+                                        self.chat_logs.push("> ⚙️ System Commands:".to_string());
+                                        self.chat_logs.push("  /color <name>   (e.g. green, cyan, lightblue, white, yellow)".to_string());
+                                        self.chat_logs.push("  /clear          (Clears chat log)".to_string());
+                                    } else if input == "/clear" {
+                                        self.chat_logs.clear();
+                                    } else if input.starts_with("/color ") {
+                                        let color_name = input.trim_start_matches("/color ").trim().to_lowercase();
+                                        self.chat_color = match color_name.as_str() {
+                                            "green" => Color::Green,
+                                            "lightgreen" => Color::LightGreen,
+                                            "blue" => Color::Blue,
+                                            "lightblue" => Color::LightBlue,
+                                            "cyan" => Color::Cyan,
+                                            "lightcyan" => Color::LightCyan,
+                                            "magenta" => Color::Magenta,
+                                            "lightmagenta" => Color::LightMagenta,
+                                            "yellow" => Color::Yellow,
+                                            "lightyellow" => Color::LightYellow,
+                                            "white" => Color::White,
+                                            "red" => Color::Red,
+                                            "lightred" => Color::LightRed,
+                                            _ => self.chat_color,
+                                        };
+                                        self.chat_logs.push(format!("> ⚙️ System: Chat UI color changed to {}", color_name));
+                                    } else {
+                                        self.chat_logs.push(format!("> 🙎‍♂️ You: {}", self.input));
+                                        let _ = self.user_tx.send(self.input.clone());
+                                    }
+                                    self.input.clear();
+                                }
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
+                    Event::Mouse(mouse_event) => {
+                        let width = terminal.size()?.width;
+                        let middle_start = width / 5; // Left panel is 20%
+                        let right_start = (width * 3) / 5; // Middle bounds hit 60%
+                        
+                        match mouse_event.kind {
+                            MouseEventKind::ScrollUp => { // Scrolling up pushes viewport backwards (view older logs)
+                                if mouse_event.column >= middle_start && mouse_event.column < right_start {
+                                    self.log_scroll_offset = self.log_scroll_offset.saturating_add(3).min(1000);
+                                } else if mouse_event.column >= right_start {
+                                    self.chat_scroll_offset = self.chat_scroll_offset.saturating_add(3).min(1000);
+                                }
+                            }
+                            MouseEventKind::ScrollDown => { // Scrolling down pulls viewport towards 0 (view latest)
+                                if mouse_event.column >= middle_start && mouse_event.column < right_start {
+                                    self.log_scroll_offset = self.log_scroll_offset.saturating_sub(3);
+                                } else if mouse_event.column >= right_start {
+                                    self.chat_scroll_offset = self.chat_scroll_offset.saturating_sub(3);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
 
         // Return terminal to normal
         disable_raw_mode()?;
-        execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+        execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
         terminal.show_cursor()?;
 
         Ok(())
@@ -224,13 +254,20 @@ impl TuiApp {
             .block(Block::default().borders(Borders::ALL).border_type(ratatui::widgets::BorderType::Thick).title("⚙️ System Telemetry Feed").border_style(Style::default().fg(Color::DarkGray)))
             .wrap(Wrap { trim: true });
         
-        // Auto Scroll computation
-        let mut scroll = 0;
-        let content_height = self.logs.len() as u16; // rough estimate, wrapping might add lines!
+        // Auto Scroll algorithmic compensation
+        let panel_width = top_chunks[1].width.saturating_sub(2) as usize;
         let panel_height = top_chunks[1].height.saturating_sub(2);
-        
+
+        let mut content_height = 0;
+        for log in &self.logs {
+            let wrapped_lines = (log.chars().count() / panel_width.max(1)) + 1;
+            content_height += wrapped_lines as u16;
+        }
+
+        let mut scroll = 0;
         if content_height > panel_height {
-            scroll = content_height - panel_height;
+            let max_scroll = content_height - panel_height;
+            scroll = max_scroll.saturating_sub(self.log_scroll_offset);
         }
 
         let logs_panel = logs_panel.scroll((scroll, 0));
@@ -251,10 +288,17 @@ impl TuiApp {
             .block(Block::default().borders(Borders::ALL).border_type(ratatui::widgets::BorderType::Thick).title("🦑 The Consortium Hive-Mind Chat").border_style(Style::default().fg(self.chat_color)))
             .wrap(Wrap { trim: true });
         
+        let chat_panel_width = top_chunks[2].width.saturating_sub(2) as usize;
+        let mut chat_height = 0;
+        for log in &self.chat_logs {
+            let wrapped_lines = (log.chars().count() / chat_panel_width.max(1)) + 1;
+            chat_height += wrapped_lines as u16;
+        }
+
         let mut chat_scroll = 0;
-        let chat_height = self.chat_logs.len() as u16;
         if chat_height > panel_height {
-            chat_scroll = chat_height - panel_height;
+            let max_scroll = chat_height - panel_height;
+            chat_scroll = max_scroll.saturating_sub(self.chat_scroll_offset);
         }
 
         let chat_panel = chat_panel.scroll((chat_scroll, 0));
