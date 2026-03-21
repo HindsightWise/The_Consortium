@@ -12,6 +12,10 @@ jobs:
 
       - name: Setup Rust Toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-workspaces: |
+            core -> target
+            face -> target
 
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
@@ -19,4 +23,10 @@ jobs:
       - name: Run Coverage 
         run: |
           # SOP 7.1: 80% Hard Gate
-          cargo tarpaulin --fail-under 80 --out Xml
+          # Running coverage on both core and face if they exist
+          if [ -d "core" ]; then
+            cd core && cargo tarpaulin --fail-under 80 --out Xml && cd ..
+          fi
+          if [ -d "face" ]; then
+            cd face && cargo tarpaulin --fail-under 80 --out Xml && cd ..
+          fi
