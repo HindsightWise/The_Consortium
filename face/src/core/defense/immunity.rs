@@ -16,7 +16,7 @@ impl ProcessImmunity {
         unsafe {
             // macOS ptrace signature: (request, pid, addr, data)
             // addr is *mut i8 (c_char)
-            let res = ptrace(PT_DENY_ATTACH, 0, std::ptr::null_mut(), 0);
+            let res = ptrace(PT_DENY_ATTACH.try_into().unwrap(), 0, std::ptr::null_mut::<libc::c_void>(), 0);
             if res == -1 {
                 eprintln!("🚨 IMMUNITY BREACH: Debugger detected or attachment failed. Terminating Soul.");
                 process::exit(45); 
