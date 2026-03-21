@@ -1,30 +1,50 @@
-use reqwest::header::{HeaderMap, HeaderValue, COOKIE, CONTENT_TYPE};
+use anyhow::Context;
+use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, COOKIE};
 use serde_json::json;
+use std::env;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let auth_token = "1808671eff850fb41c4f0558d9804e67c62d25ad";
-    let ct0 = "d413da1add9ed9cc8881acfc45179113f5625ff59c0ec22c96bce761124803227bd19c7770ff6ab6ca0189e8f73f66c3aa9d4f4c06462afd704406a5a9d8d6a86343bd4f12c3a8f0c42f246fd885e39a";
-    let message = "🛡️ THE_CEPHALO_DON STATUS: The Sovereign Engine is now fully unplugged. Tri-Tier LLM routing ($50/mo thermodynamic efficiency) is active. Native UI blocking removed. The Flywheel spins.";
+    // Securely load secrets from environment variables
+    let auth_token =
+        env::var("X_AUTH_TOKEN").context("Missing X_AUTH_TOKEN environment variable")?;
+    let ct0 = env::var("X_CSRF_TOKEN").context("Missing X_CSRF_TOKEN environment variable")?;
+    let bearer_token =
+        env::var("X_BEARER_TOKEN").context("Missing X_BEARER_TOKEN environment variable")?;
+
+    // The message could optionally be externalized, but is left hardcoded as it is a specific payload.
+    // We could make it an env var or a CLI arg in the future if needed.
+    let message = env::var("X_TWEET_MESSAGE").unwrap_or_else(|_| {
+        "🛡️ THE_CEPHALO_DON STATUS: The Sovereign Engine is now fully unplugged. Tri-Tier LLM routing ($50/mo thermodynamic efficiency) is active. Native UI blocking removed. The Flywheel spins.".to_string()
+    });
 
     println!("🦷 [The_Cephalo_Don] Initiating Sovereign API Strike...");
 
     let client = reqwest::Client::new();
     let mut headers = HeaderMap::new();
-    
+
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    headers.insert("authorization", HeaderValue::from_static("Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNw%2Fqf7DqWKIj9969uMSECmSfs0%3D97Z4pS7W7mAnpSvrZ6ZpZ6ZpZ6ZpZ6ZpZ6ZpZ6ZpZ6Z"));
-    headers.insert("x-csrf-token", HeaderValue::from_str(ct0)?);
-    headers.insert("x-twitter-auth-type", HeaderValue::from_static("OAuth2Session"));
+
+    // Formatting the bearer token
+    let bearer_value = format!("Bearer {}", bearer_token);
+    headers.insert("authorization", HeaderValue::from_str(&bearer_value)?);
+
+    // Using the CSRF token directly as a string (it's loaded as a string)
+    headers.insert("x-csrf-token", HeaderValue::from_str(&ct0)?);
+
+    headers.insert(
+        "x-twitter-auth-type",
+        HeaderValue::from_static("OAuth2Session"),
+    );
     headers.insert("x-twitter-active-user", HeaderValue::from_static("yes"));
     headers.insert("x-twitter-client-language", HeaderValue::from_static("en"));
-    
+
     let cookie_str = format!("auth_token={}; ct0={}", auth_token, ct0);
     headers.insert(COOKIE, HeaderValue::from_str(&cookie_str)?);
 
     // GraphQL CreateTweet Mutation (Sn9_B_bc9YnS6S4iflbSLA is a common ID for this query)
     let url = "https://x.com/i/api/graphql/Sn9_B_bc9YnS6S4iflbSLA/CreateTweet";
-    
+
     let payload = json!({
         "variables": {
             "tweet_text": message,
@@ -59,7 +79,8 @@ async fn main() -> anyhow::Result<()> {
         "queryId": "Sn9_B_bc9YnS6S4iflbSLA"
     });
 
-    let resp = client.post(url)
+    let resp = client
+        .post(url)
         .headers(headers)
         .json(&payload)
         .send()
@@ -71,7 +92,10 @@ async fn main() -> anyhow::Result<()> {
     if status.is_success() {
         println!("✅ [The_Cephalo_Don] API Strike Successful. Signal Delivered.");
     } else {
-        println!("❌ [The_Cephalo_Don] API Strike Failed ({}): {}", status, body);
+        println!(
+            "❌ [The_Cephalo_Don] API Strike Failed ({}): {}",
+            status, body
+        );
     }
 
     Ok(())
