@@ -128,7 +128,7 @@ ed25519-dalek = "1.0.1"
 uuid = { version = "1.15.1", features = ["v7", "serde"] }
 rand = { version = "0.8", features = ["std", "alloc", "getrandom"] }
 openssl = "0.10.75"
-core-graphics = "0.23"
+#core-graphics = "0.23"
 actix-web = "=4.4.0"
 anchor-lang = "0.28.0"
 anchor-spl = "0.28.0"
