@@ -10,20 +10,32 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Locate Frontend Directory
+        id: locate-frontend
+        run: |
+          if [ -d "core/consortium_ui" ]; then
+            echo "frontend_dir=core/consortium_ui" >> $GITHUB_OUTPUT
+          else
+            echo "frontend_dir=." >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
       - name: Install dependencies
+        working-directory: ${{ steps.locate-frontend.outputs.frontend_dir }}
         run: npm ci || npm install
 
       - name: Start development server
+        working-directory: ${{ steps.locate-frontend.outputs.frontend_dir }}
         run: npm run dev &
         env:
           PORT: 3000
 
       - name: Wait for server
+        working-directory: ${{ steps.locate-frontend.outputs.frontend_dir }}
         run: npx wait-on http://localhost:3000
 
       - name: Run Axe-Core Ppueteer Audit
