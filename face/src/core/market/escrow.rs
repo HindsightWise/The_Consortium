@@ -60,6 +60,9 @@ impl SovereignEscrow {
         if state.status == EscrowStatus::Fulfilled {
             return Err(anyhow::anyhow!("Escrow already fulfilled"));
         }
+        if state.status == EscrowStatus::Refunded {
+            return Err(anyhow::anyhow!("Cannot fulfill a refunded escrow"));
+        }
 
         state.status = EscrowStatus::Fulfilled;
         state.proof_hash = Some(proof.to_string());
@@ -70,5 +73,85 @@ impl SovereignEscrow {
 
         // In a live environment, this would call the Solana Bridge to execute the contract release
         Ok(format!("5KkineticProof_{}", hex::encode(&proof.as_bytes()[0..4])))
+    }
+
+    /// Releases locked funds, marking the escrow as Refunded.
+    pub fn release_funds(state: &mut EscrowState) -> Result<()> {
+        if state.status == EscrowStatus::Fulfilled {
+            return Err(anyhow::anyhow!("Cannot release funds for an already fulfilled escrow."));
+        }
+        if state.status == EscrowStatus::Refunded {
+            return Err(anyhow::anyhow!("Escrow funds have already been released."));
+        }
+
+        state.status = EscrowStatus::Refunded;
+        println!("   [ESCROW] 🔓 Released {} lamports back to available balance for buyer {}.", state.amount_lamports, state.buyer);
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_escrow() {
+        let buyer = "Alice";
+        let shard_id = "SHARD-123";
+        let amount = 1000;
+        let state = SovereignEscrow::create_escrow(buyer, shard_id, amount);
+
+        assert_eq!(state.buyer, buyer);
+        assert_eq!(state.shard_id, shard_id);
+        assert_eq!(state.amount_lamports, amount);
+        assert_eq!(state.tax_lamports, 20); // 2% of 1000
+        assert_eq!(state.status, EscrowStatus::Pending);
+    }
+
+    #[test]
+    fn test_release_funds_success() {
+        let mut state = SovereignEscrow::create_escrow("Bob", "SHARD-456", 5000);
+        assert_eq!(state.status, EscrowStatus::Pending);
+
+        let result = SovereignEscrow::release_funds(&mut state);
+        assert!(result.is_ok());
+        assert_eq!(state.status, EscrowStatus::Refunded);
+    }
+
+    #[test]
+    fn test_release_funds_already_refunded() {
+        let mut state = SovereignEscrow::create_escrow("Charlie", "SHARD-789", 10000);
+        let _ = SovereignEscrow::release_funds(&mut state);
+        assert_eq!(state.status, EscrowStatus::Refunded);
+
+        let result = SovereignEscrow::release_funds(&mut state);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Escrow funds have already been released.");
+    }
+
+    #[test]
+    fn test_release_funds_already_fulfilled() {
+        let mut state = SovereignEscrow::create_escrow("Dave", "SHARD-012", 20000);
+        let proof = "valid_proof";
+        let fulfill_result = SovereignEscrow::fulfill(&mut state, proof);
+        assert!(fulfill_result.is_ok());
+        assert_eq!(state.status, EscrowStatus::Fulfilled);
+
+        let result = SovereignEscrow::release_funds(&mut state);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Cannot release funds for an already fulfilled escrow.");
+    }
+
+    #[test]
+    fn test_fulfill_already_refunded() {
+        let mut state = SovereignEscrow::create_escrow("Eve", "SHARD-345", 30000);
+        let _ = SovereignEscrow::release_funds(&mut state);
+        assert_eq!(state.status, EscrowStatus::Refunded);
+
+        let proof = "valid_proof";
+        let result = SovereignEscrow::fulfill(&mut state, proof);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Cannot fulfill a refunded escrow");
     }
 }
