@@ -43,6 +43,7 @@ mod tests {
         // Ensure experience 1 is not present
         for gist in &soul.worldview.pervasive_structures {
             assert!(!gist.contains("1"));
+            // assert!(!gist.contains("1"));
         }
     }
 

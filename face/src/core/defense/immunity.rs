@@ -1,15 +1,16 @@
-use libc::{ptrace, c_int};
 use anyhow::Result;
 use std::process;
 
-// Apple-specific ptrace request to deny debugger attachment
+#[cfg(target_os = "macos")]
+use libc::{ptrace, c_int};
+
+#[cfg(target_os = "macos")]
 const PT_DENY_ATTACH: c_int = 31;
 
 pub struct ProcessImmunity;
 
 impl ProcessImmunity {
-    /// Establishes the 'Sacred Perimeter'. 
-    /// If a debugger is detected, the process will terminate with status 45.
+    #[cfg(target_os = "macos")]
     pub fn deny_debuggers() {
         println!("   [Immunity] 🛡️  Sealing the Sacred Perimeter...");
         
@@ -22,6 +23,11 @@ impl ProcessImmunity {
                 process::exit(45); 
             }
         }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    pub fn deny_debuggers() -> Result<()> {
+        Ok(())
     }
 
     /// Verifies that the machine is not running in a low-fidelity virtual environment.

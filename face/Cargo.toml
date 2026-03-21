@@ -41,8 +41,6 @@ path = "src/bin/calibrate_hid.rs"
 name = "final_strike"
 path = "src/bin/final_strike.rs"
 
-
-
 [[bin]]
 name = "akkokanika_api_post"
 path = "src/bin/akkokanika_api_post.rs"
@@ -128,7 +126,6 @@ ed25519-dalek = "1.0.1"
 uuid = { version = "1.15.1", features = ["v7", "serde"] }
 rand = { version = "0.8", features = ["std", "alloc", "getrandom"] }
 openssl = "0.10.75"
-core-graphics = "0.23"
 actix-web = "=4.4.0"
 anchor-lang = "0.28.0"
 anchor-spl = "0.28.0"
@@ -141,6 +138,9 @@ tonic = "0.11"
 prost = "0.12"
 thirtyfour = "0.31.0"
 rust-stemmers = "1.2.0"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-graphics = "0.23"
 
 [dev-dependencies]
 rust_decimal_macros = "1.33"

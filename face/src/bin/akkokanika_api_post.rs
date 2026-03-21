@@ -1,5 +1,5 @@
 use anyhow::Context;
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, COOKIE};
+use reqwest::header::{HeaderMap, HeaderValue, COOKIE, CONTENT_TYPE};
 use serde_json::json;
 use std::env;
 
