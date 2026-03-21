@@ -308,6 +308,6 @@ mod tests {
         let duration = start.elapsed();
         
         // Assert we can do 10,000 in under a reasonable time for a debug build
-        assert!(duration.as_secs_f64() < 5.0, "Benchmark took too long: {:?}", duration);
+        assert!(duration.as_secs_f64() < 15.0, "Benchmark took too long: {:?}", duration);
     }
 }

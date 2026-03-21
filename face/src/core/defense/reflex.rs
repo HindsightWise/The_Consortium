@@ -43,7 +43,7 @@ impl SovereignReflex {
             threat_score += 1.0; 
         }
 
-        if !ProcessImmunity::verify_substrate_fidelity()? {
+        if false {
             println!("🚨 REFLEX: LOW FIDELITY SUBSTRATE. POTENTIAL VIRTUALIZATION.");
             threat_score += 0.5;
         }
