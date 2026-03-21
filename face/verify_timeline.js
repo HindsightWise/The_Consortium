@@ -3,7 +3,12 @@ const fs = require('fs');
 const path = require('path');
 
 // Extract cookies from the known working state
-const cookieString = 'auth_token=1808671eff850fb41c4f0558d9804e67c62d25ad; ct0=d413da1add9ed9cc8881acfc45179113f5625ff59c0ec22c96bce761124803227bd19c7770ff6ab6ca0189e8f73f66c3aa9d4f4c06462afd704406a5a9d8d6a86343bd4f12c3a8f0c42f246fd885e39a';
+const cookieString = process.env.AUTH_COOKIE;
+if (!cookieString) {
+  console.error("CRITICAL ERROR: AUTH_COOKIE environment variable is not set or empty.");
+  console.error("Please provide the authentication cookie string via the AUTH_COOKIE environment variable.");
+  process.exit(1);
+}
 const cookies = cookieString.split('; ').map(c => {
   const [name, value] = c.split('=');
   return { name, value, domain: '.x.com', path: '/' };
